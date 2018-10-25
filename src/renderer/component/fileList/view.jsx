@@ -10,7 +10,6 @@ type Props = {
   sortByHeight?: boolean,
   claimsById: Array<{}>,
   fileInfos: Array<FileInfo>,
-  checkPending?: boolean,
 };
 
 type State = {
@@ -35,9 +34,12 @@ class FileList extends React.PureComponent<Props, State> {
       dateNew: fileInfos =>
         this.props.sortByHeight
           ? fileInfos.sort((fileInfo1, fileInfo2) => {
-              if (fileInfo1.pending) {
+              if (fileInfo1.confirmations < 1) {
                 return -1;
+              } else if (fileInfo2.confirmations < 1) {
+                return 1;
               }
+
               const height1 = this.props.claimsById[fileInfo1.claim_id]
                 ? this.props.claimsById[fileInfo1.claim_id].height
                 : 0;
@@ -132,7 +134,7 @@ class FileList extends React.PureComponent<Props, State> {
   sortFunctions: {};
 
   render() {
-    const { fileInfos, hideFilter, checkPending } = this.props;
+    const { fileInfos, hideFilter } = this.props;
     const { sortBy } = this.state;
     const content = [];
 
@@ -160,7 +162,7 @@ class FileList extends React.PureComponent<Props, State> {
       const outpoint = `${txid}:${nout}`;
 
       // See https://github.com/lbryio/lbry-desktop/issues/1327 for discussion around using outpoint as the key
-      content.push(<FileCard key={outpoint} uri={uri} checkPending={checkPending} isNew={isNew} />);
+      content.push(<FileCard key={outpoint} uri={uri} isNew={isNew} />);
     });
 
     return (

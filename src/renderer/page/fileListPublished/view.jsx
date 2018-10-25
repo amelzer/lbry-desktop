@@ -1,23 +1,21 @@
 // @flow
+import type { Claim } from 'types/claim';
 import React from 'react';
 import Button from 'component/button';
 import FileList from 'component/fileList';
 import Page from 'component/page';
 
 type Props = {
-  pendingPublishes: Array<{}>,
-  claims: Array<{}>,
-  checkIfPublishesConfirmed: (Array<{}>) => void,
+  claims: Array<Claim>,
+  checkPendingPublishes: () => void,
   navigate: (string, ?{}) => void,
   fetching: boolean,
 };
 
 class FileListPublished extends React.PureComponent<Props> {
   componentDidMount() {
-    const { pendingPublishes, checkIfPublishesConfirmed } = this.props;
-    if (pendingPublishes.length) {
-      checkIfPublishesConfirmed(pendingPublishes);
-    }
+    const { checkPendingPublishes } = this.props;
+    checkPendingPublishes();
   }
 
   render() {
