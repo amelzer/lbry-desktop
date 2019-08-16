@@ -1,0 +1,321 @@
+@import '~@lbry/components/sass/form/_index.scss';
+
+// Reset lbry components style that turns buttons inside of forms black
+form {
+  .button--primary,
+  [type='submit'] {
+    &:not(:hover),
+    &:hover {
+      @extend .button--primary;
+    }
+  }
+
+  .button--inverse {
+    &:not(:hover),
+    &:hover {
+      // @extend .button--inverse;
+    }
+  }
+}
+
+textarea {
+  &::placeholder {
+    opacity: 0.4;
+  }
+}
+
+// lbry/components overrides and minor styles
+// Some items have very specific styling
+// This is because many styles inside `lbry/components/sass/form/` are very specific
+// As styles become hardened here, they _should_ slowly move over to that repo
+
+input-submit {
+  align-items: center;
+}
+
+input[type='number'] {
+  width: 8em;
+}
+
+input,
+input[type='text'],
+input[type='number'],
+input[type='email'],
+select,
+textarea {
+  height: var(--input-height);
+  padding-bottom: 0.1em;
+
+  [data-mode='dark'] & {
+    &::placeholder {
+      opacity: 0.4;
+    }
+  }
+}
+
+input,
+select,
+textarea {
+  border-color: lighten($lbry-black, 20%);
+  border-radius: var(--input-border-radius);
+  border-width: 1px;
+}
+
+fieldset-section {
+  margin-bottom: var(--spacing-small);
+
+  label {
+    width: auto;
+    text-transform: none;
+  }
+}
+
+checkbox-element {
+  &[disabled='true'] {
+    opacity: 0.3;
+  }
+}
+
+checkbox-element,
+radio-element,
+fieldset:last-child,
+fieldset-section:last-child {
+  margin-bottom: 0;
+}
+
+checkbox-element,
+radio-element {
+  label {
+    color: lighten($lbry-black, 20%);
+    margin-bottom: 0;
+    margin-left: var(--spacing-miniscule);
+    font-size: var(--font-body);
+
+    [data-mode='dark'] & {
+      color: $lbry-gray-1;
+
+      &:hover {
+        color: $lbry-teal-4;
+      }
+    }
+  }
+}
+
+checkbox-toggle {
+  &:before {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 100%;
+    transition: all 0.2s;
+  }
+}
+
+fieldset-group {
+  &.fieldset-group--smushed {
+    justify-content: flex-start;
+
+    fieldset-section {
+      width: auto;
+      margin-bottom: 0;
+
+      &:first-of-type {
+        input {
+          border-right: none;
+          border-top-right-radius: 0;
+          border-bottom-right-radius: 0;
+        }
+      }
+
+      &:nth-of-type(2) {
+        input,
+        select {
+          border-top-left-radius: 0;
+          border-bottom-left-radius: 0;
+        }
+      }
+    }
+
+    &.fieldgroup--paginate {
+      padding-bottom: var(--spacing-large);
+      margin-top: var(--spacing-large);
+      align-items: flex-end;
+      justify-content: center;
+    }
+  }
+
+  // This is a special case where the prefix appears "inside" the input
+  // It would be way simpler to just use position: absolute and give it a width
+  // but the width can change when we use it for the name prefix
+  // lbry:// {input}, lbry://@short {input}, @lbry://longername {input}
+  // The spacing/alignment isn't very robust and will probably need to be changed
+  // if we use this in more places
+  &.fieldset-group--disabled-prefix {
+    align-items: flex-end;
+
+    label {
+      min-height: 18px;
+    }
+
+    fieldset-section:first-child .form-field__prefix,
+    fieldset-section:last-child input {
+      border-color: $lbry-black;
+
+      [data-mode='dark'] {
+        border-color: $lbry-gray-4;
+      }
+    }
+
+    fieldset-section:first-child {
+      .form-field__prefix {
+        white-space: nowrap;
+        padding: var(--spacing-miniscule);
+        height: var(--input-height);
+        padding-right: 0;
+        border: 1px solid;
+        border-right: 0;
+        border-color: $lbry-black;
+        color: $lbry-gray-4;
+
+        [data-mode='dark'] & {
+          border-color: $lbry-gray-4;
+        }
+      }
+    }
+
+    fieldset-section:last-child {
+      width: 100%;
+
+      input {
+        border-left: 0;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        padding-left: var(--spacing-xs);
+
+        &:focus {
+          border-image-slice: 1;
+          border-image-source: linear-gradient(to right, $lbry-black, $lbry-teal-5 5%);
+        }
+
+        [data-mode='dark'] & {
+          &:focus {
+            border-image-source: linear-gradient(to right, $lbry-gray-4, $lbry-teal-5 5%);
+          }
+        }
+      }
+    }
+  }
+}
+
+// form buttons are black by default
+form {
+  [type='button'],
+  [type='submit'] {
+    &.button--inverse {
+      &:not(:hover) {
+        background-color: transparent;
+        border-color: $lbry-black;
+        color: $lbry-black;
+      }
+
+      &:hover {
+        background-color: $lbry-teal-4;
+      }
+    }
+  }
+}
+
+fieldset-section {
+  input-submit {
+    input {
+      &:first-child {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-right: none;
+      }
+    }
+
+    input[type='email'],
+    input[type='text'] {
+      [data-mode='dark'] & {
+        &:not(:focus) {
+          border-color: $lbry-gray-5;
+        }
+      }
+    }
+
+    .button,
+    // specificity needed because of @lbry/component rules
+    // @lbry/componentfixme
+    .button[type='submit']:not(:hover) {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      border-color: $lbry-black;
+      opacity: 1;
+
+      [data-mode='dark'] & {
+        border-color: $lbry-gray-5;
+        color: $lbry-white;
+      }
+    }
+  }
+
+  select {
+    max-width: 12em;
+    background-position: 95% center;
+    background-size: 1.2rem;
+    background-color: $lbry-white;
+
+    [data-mode='dark'] & {
+      background-color: transparent;
+
+      option {
+        background-color: $lbry-gray-5;
+      }
+    }
+  }
+
+  [data-mode='dark'] & {
+    input,
+    textarea,
+    select {
+      color: $lbry-white;
+    }
+
+    input:not(:focus):not(.form-field--copyable),
+    textarea:not(:focus),
+    select:not(:focus) {
+      border-color: var(--dm-color-04);
+    }
+  }
+}
+
+.form-field--copyable {
+  background-color: rgba($lbry-gray-1, 0.5);
+  border: 1px solid $lbry-gray-1;
+  color: $lbry-gray-5;
+  flex: 1;
+  padding: 0.2rem 0.75rem;
+  text-overflow: ellipsis;
+  user-select: text;
+  cursor: default;
+
+  [data-mode='dark'] & {
+    background-color: rgba($lbry-white, 0.3);
+    border-color: $lbry-gray-5;
+    color: inherit;
+  }
+}
+
+.form-field__help {
+  @extend .help;
+  margin-top: var(--spacing-small);
+  margin-bottom: var(--spacing-large);
+}
+
+.form-field--price-amount {
+  width: 7em;
+}
+
+.form-field--address {
+  width: 370px;
+}

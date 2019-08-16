@@ -1,0 +1,130 @@
+.header {
+  z-index: 2; // Main content uses z-index: 1, this ensures it always scrolls under the header
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background-color: $lbry-white;
+  border-bottom: 1px solid $lbry-gray-1;
+  box-shadow: var(--card-box-shadow) $lbry-gray-1;
+  font-size: var(--font-body);
+
+  [data-mode='dark'] & {
+    background-color: var(--dm-color-05);
+    color: var(--dm-color-01);
+    border-bottom: none;
+    box-shadow: var(--card-box-shadow) $lbry-black;
+  }
+
+  & > * {
+    user-select: none;
+  }
+}
+
+.header__contents {
+  max-width: var(--page-max-width);
+  height: calc(var(--header-height) - 1px);
+  display: flex;
+  justify-content: space-between;
+  margin: auto;
+  padding: 0 var(--spacing-large);
+}
+
+.header__navigation {
+  display: flex;
+  justify-content: space-between;
+
+  &:last-of-type {
+    width: var(--side-nav-width);
+
+    @media (max-width: 600px) {
+      display: none;
+    }
+  }
+}
+
+.header__navigation-arrows {
+  display: flex;
+  margin-right: var(--spacing-small);
+}
+
+.header__navigation-item {
+  height: var(--header-height);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0;
+
+  &:hover {
+    color: $lbry-teal-5;
+
+    svg {
+      stroke: $lbry-teal-5;
+    }
+  }
+
+  &.header__navigation-item--active {
+    &::after {
+      height: 0.2em;
+      bottom: 0;
+      width: 100%;
+      background-color: $lbry-teal-5;
+      content: '';
+      position: absolute;
+
+      [data-mode='dark'] & {
+        background-color: $lbry-teal-3;
+      }
+    }
+  }
+
+  [data-mode='dark'] & {
+    &:hover {
+      color: $lbry-teal-3;
+
+      svg {
+        stroke: $lbry-teal-3;
+      }
+    }
+
+    svg {
+      stroke: var(--dm-color-01);
+    }
+  }
+}
+
+.header__navigation-item--back,
+.header__navigation-item--forward {
+  width: 3rem;
+}
+
+.header__navigation-item--lbry {
+  flex: 1;
+  font-weight: 800;
+  margin-right: var(--spacing-medium);
+
+  .lbry-icon {
+    height: 2rem;
+    width: 2rem;
+  }
+}
+
+.header__navigation-item--right-action {
+  align-self: flex-end;
+  margin-left: auto;
+  padding: 0 var(--spacing-small);
+}
+
+.header__navigation-item--upgrade {
+  color: $lbry-teal-5;
+  svg {
+    stroke: $lbry-teal-5;
+  }
+}
+
+@media (max-width: 600px) {
+  .header__navigation-item--back,
+  .header__navigation-item--forward,
+  .header__navigation-item--right-action {
+    display: none;
+  }
+}

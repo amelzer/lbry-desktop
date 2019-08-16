@@ -1,0 +1,91 @@
+$main: $lbry-teal-5;
+
+.tags {
+  @extend .ul--no-style;
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+
+  .tag {
+    margin-left: 0;
+    margin-top: var(--spacing-small);
+    margin-right: var(--spacing-small);
+  }
+}
+
+.tags--remove {
+  @extend .tags;
+  @extend .ul--no-style;
+  margin-bottom: var(--spacing-large);
+}
+
+.tags--vertical {
+  @extend .tags;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0;
+}
+
+.tags--selected {
+  @extend .tags;
+  margin: var(--spacing-large) 0;
+}
+
+.tags__empty-message {
+  margin-top: var(--spacing-medium);
+}
+
+.tag {
+  @extend .badge;
+  @extend .badge--tag;
+  user-select: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: lowercase;
+  max-width: 10rem;
+  min-width: 0;
+
+  &:hover {
+    background-color: $lbry-teal-4;
+    color: $lbry-white;
+    svg {
+      stroke: $lbry-white;
+    }
+  }
+
+  &:active {
+    background-color: $main;
+  }
+}
+
+.tag--remove {
+  max-width: 20rem;
+  font-size: var(--font-body);
+}
+
+.tag--add {
+  background-color: lighten($lbry-teal-5, 60%);
+
+  &.tag--mature {
+    @extend .badge--mature;
+  }
+}
+
+.tag--mature {
+  @extend .badge--mature;
+  // Lighten the color a little so it doesn't stand out as much on claim previews
+}
+
+.tag__action-label {
+  margin-left: 0.5rem;
+  padding-left: 0.5rem;
+  padding-top: 0.7rem;
+
+  [data-mode='dark'] & {
+    border-color: rgba($lbry-white, 0.1);
+  }
+}
