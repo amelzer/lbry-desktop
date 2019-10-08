@@ -1,3 +1,4 @@
+import { WEBPACK_ELECTRON_PORT } from 'config';
 import { app, BrowserWindow, dialog, shell, screen } from 'electron';
 import isDev from 'electron-is-dev';
 import windowStateKeeper from 'electron-window-state';
@@ -16,7 +17,7 @@ export default appState => {
   });
 
   const windowConfiguration = {
-    backgroundColor: '#270f34', // Located in src/scss/init/_vars.scss `--color-background`
+    backgroundColor: '#270f34', // Located in src/scss/init/_vars.scss `--color-background--splash`
     minWidth: 950,
     minHeight: 600,
     autoHideMenuBar: true,
@@ -36,7 +37,7 @@ export default appState => {
   };
   const lbryProto = 'lbry://';
   const lbryProtoQ = 'lbry://?';
-  const rendererURL = isDev ? `http://localhost:${WEBPACK_PORT}` : `file://${__dirname}/index.html`;
+  const rendererURL = isDev ? `http://localhost:${WEBPACK_ELECTRON_PORT}` : `file://${__dirname}/index.html`;
 
   let window = new BrowserWindow(windowConfiguration);
 
@@ -69,7 +70,9 @@ export default appState => {
 
   // is it a lbry://? pointing to an app page
   if (deepLinkingURI.includes(lbryProtoQ)) {
-    if (Object.values(PAGES).includes(deepLinkingURI.substr(lbryProtoQ.length))) {
+    let path = deepLinkingURI.substr(lbryProtoQ.length);
+    let page = path.indexOf('?') >= 0 ? path.substring(0, path.indexOf('?')) : path;
+    if (Object.values(PAGES).includes(page)) {
       deepLinkingURI = deepLinkingURI.replace(lbryProtoQ, '#/$/');
     } else {
       deepLinkingURI = '';

@@ -2,11 +2,10 @@
 
 table,
 .table {
+  background-color: transparent;
   margin: var(--spacing-small) 0;
 
   [data-mode='dark'] & {
-    background-color: transparent;
-
     th {
       border-bottom: 2px solid $lbry-white;
     }

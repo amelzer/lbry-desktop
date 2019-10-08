@@ -6,8 +6,8 @@ import classnames from 'classnames';
 import LoadingScreen from 'component/common/loading-screen';
 import FileRender from 'component/fileRender';
 import UriIndicator from 'component/uriIndicator';
-import usePersistedState from 'util/use-persisted-state';
-import usePrevious from 'util/use-previous';
+import usePersistedState from 'effects/use-persisted-state';
+import usePrevious from 'effects/use-previous';
 import { FILE_WRAPPER_CLASS } from 'page/file/view';
 import Draggable from 'react-draggable';
 import Tooltip from 'component/common/tooltip';
@@ -28,7 +28,7 @@ type Props = {
   title: ?string,
   floatingPlayerEnabled: boolean,
   clearPlayingUri: () => void,
-  triggerAnalyticsView: (string, number) => void,
+  triggerAnalyticsView: (string, number) => Promise<any>,
   claimRewards: () => void,
 };
 
@@ -45,6 +45,7 @@ export default function FileViewer(props: Props) {
     floatingPlayerEnabled,
     triggerAnalyticsView,
     claimRewards,
+    mediaType,
   } = props;
   const [playTime, setPlayTime] = useState();
   const [fileViewerRect, setFileViewerRect] = usePersistedState('inline-file-viewer:rect');
@@ -61,9 +62,8 @@ export default function FileViewer(props: Props) {
       : __('Loading');
 
   const previousUri = usePrevious(uri);
-  const previousIsReadyToPlay = usePrevious(isReadyToPlay);
   const isNewView = uri && previousUri !== uri && isPlaying;
-  const wasntReadyButNowItIs = isReadyToPlay && !previousIsReadyToPlay;
+  const [hasRecordedView, setHasRecordedView] = useState(false);
 
   useEffect(() => {
     if (isNewView) {
@@ -72,19 +72,22 @@ export default function FileViewer(props: Props) {
   }, [isNewView, uri]);
 
   useEffect(() => {
-    if (playTime && isReadyToPlay && wasntReadyButNowItIs) {
+    if (playTime && isReadyToPlay && !hasRecordedView) {
       const timeToStart = Date.now() - playTime;
-      triggerAnalyticsView(uri, timeToStart);
-      claimRewards();
-      setPlayTime(null);
+      triggerAnalyticsView(uri, timeToStart).then(() => {
+        claimRewards();
+        setHasRecordedView(false);
+        setPlayTime(null);
+      });
     }
-  }, [setPlayTime, triggerAnalyticsView, isReadyToPlay, wasntReadyButNowItIs, playTime, uri, claimRewards]);
+  }, [setPlayTime, triggerAnalyticsView, isReadyToPlay, hasRecordedView, playTime, uri, claimRewards]);
 
   useEffect(() => {
     function handleResize() {
       const element = document.querySelector(`.${FILE_WRAPPER_CLASS}`);
       if (!element) {
-        throw new Error("Can't find file viewer wrapper to attach to");
+        console.error("Can't find file viewer wrapper to attach to the inline viewer to"); // eslint-disable-line
+        return;
       }
 
       const rect = element.getBoundingClientRect();
@@ -111,7 +114,9 @@ export default function FileViewer(props: Props) {
     });
   }
 
-  const hidePlayer = !isPlaying || !uri || (!inline && (!floatingPlayerEnabled || !isStreamable));
+  const hidePlayer =
+    !isPlaying || !uri || (!inline && (!floatingPlayerEnabled || !['audio', 'video'].includes(mediaType)));
+
   if (hidePlayer) {
     return null;
   }

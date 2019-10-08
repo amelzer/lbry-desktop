@@ -8,17 +8,20 @@ import ElectronCookies from '@exponent/electron-cookies';
 // @endif
 
 const isProduction = process.env.NODE_ENV === 'production';
+const devInternalApis = process.env.LBRY_API_URL;
 
 type Analytics = {
   pageView: string => void,
   setUser: Object => void,
   toggle: (boolean, ?boolean) => void,
-  apiLogView: (string, string, string, ?number, ?() => void) => void,
+  apiLogView: (string, string, string, ?number, ?() => void) => Promise<any>,
   apiLogPublish: () => void,
   tagFollowEvent: (string, boolean, string) => void,
   emailProvidedEvent: () => void,
   emailVerifiedEvent: () => void,
   rewardEligibleEvent: () => void,
+  startupEvent: () => void,
+  readyEvent: number => void,
 };
 
 let analyticsEnabled: boolean = true;
@@ -48,25 +51,29 @@ const analytics: Analytics = {
     // @endif
   },
   apiLogView: (uri, outpoint, claimId, timeToStart) => {
-    if (analyticsEnabled && isProduction) {
-      const params: {
-        uri: string,
-        outpoint: string,
-        claim_id: string,
-        time_to_start?: number,
-      } = {
-        uri,
-        outpoint,
-        claim_id: claimId,
-      };
+    return new Promise((resolve, reject) => {
+      if (analyticsEnabled && (isProduction || devInternalApis)) {
+        const params: {
+          uri: string,
+          outpoint: string,
+          claim_id: string,
+          time_to_start?: number,
+        } = {
+          uri,
+          outpoint,
+          claim_id: claimId,
+        };
 
-      // lbry.tv streams from AWS so we don't care about the time to start
-      if (timeToStart && !IS_WEB) {
-        params.time_to_start = timeToStart;
+        // lbry.tv streams from AWS so we don't care about the time to start
+        if (timeToStart && !IS_WEB) {
+          params.time_to_start = timeToStart;
+        }
+
+        resolve(Lbryio.call('file', 'view', params));
+      } else {
+        resolve();
       }
-
-      Lbryio.call('file', 'view', params);
-    }
+    });
   },
   apiLogSearch: () => {
     if (analyticsEnabled && isProduction) {
@@ -99,6 +106,13 @@ const analytics: Analytics = {
   rewardEligibleEvent: () => {
     sendGaEvent('Engagement', 'Reward-Eligible');
   },
+  startupEvent: () => {
+    sendGaEvent('Startup', 'Startup');
+  },
+  readyEvent: (timeToReady: number) => {
+    sendGaEvent('Startup', 'App-Ready');
+    sendGaTimingEvent('Startup', 'App-Ready', timeToReady);
+  },
 };
 
 function sendGaEvent(category, action) {
@@ -106,6 +120,16 @@ function sendGaEvent(category, action) {
     ReactGA.event({
       category,
       action,
+    });
+  }
+}
+
+function sendGaTimingEvent(category: string, action: string, timeInMs: number) {
+  if (analyticsEnabled && isProduction) {
+    ReactGA.timing({
+      category,
+      variable: action,
+      value: timeInMs,
     });
   }
 }
@@ -124,6 +148,7 @@ ElectronCookies.enable({
 ReactGA.initialize(UA_ID, {
   testMode: process.env.NODE_ENV !== 'production',
   cookieDomain: 'auto',
+  siteSpeedSampleRate: 100,
   // un-comment to see events as they are sent to google
   // debug: true,
 });

@@ -2,7 +2,14 @@ import * as ACTIONS from 'constants/action_types';
 // @if TARGET='app'
 import { shell } from 'electron';
 // @endif
-import { Lbry, batchActions, doAbandonClaim, selectMyClaimsOutpoints, makeSelectFileInfoForUri } from 'lbry-redux';
+import {
+  Lbry,
+  batchActions,
+  doAbandonClaim,
+  selectMyClaimsOutpoints,
+  makeSelectFileInfoForUri,
+  makeSelectClaimForUri,
+} from 'lbry-redux';
 import { doHideModal } from 'redux/actions/app';
 import { goBack } from 'connected-react-router';
 import { doSetPlayingUri } from 'redux/actions/content';
@@ -54,17 +61,22 @@ export function doDeleteFileAndMaybeGoBack(uri, deleteFromComputer, abandonClaim
     const state = getState();
     const playingUri = selectPlayingUri(state);
     const { outpoint } = makeSelectFileInfoForUri(uri)(state) || '';
+    const { nout, txid } = makeSelectClaimForUri(uri)(state);
+    const claimOutpoint = `${txid}:${nout}`;
+
     const actions = [];
     actions.push(doHideModal());
-    actions.push(doDeleteFile(outpoint, deleteFromComputer, abandonClaim));
+    actions.push(doDeleteFile(outpoint || claimOutpoint, deleteFromComputer, abandonClaim));
 
     if (playingUri === uri) {
       actions.push(doSetPlayingUri(null));
     }
 
-    if (abandonClaim) {
-      actions.push(goBack());
-    }
+    // it would be nice to stay on the claim if you just want to delete it
+    // we need to alter autoplay to not start downloading again after you delete it
+    // if (abandonClaim) {
+    actions.push(goBack());
+    // }
 
     dispatch(batchActions(...actions));
   };

@@ -4,7 +4,7 @@ import * as ICONS from 'constants/icons';
 import React, { useRef } from 'react';
 import { parseURI } from 'lbry-redux';
 import Button from 'component/button';
-import useHover from 'util/use-hover';
+import useHover from 'effects/use-hover';
 
 type SubscriptionArgs = {
   channelName: string,
@@ -12,7 +12,7 @@ type SubscriptionArgs = {
 };
 
 type Props = {
-  uri: string,
+  permanentUrl: ?string,
   isSubscribed: boolean,
   subscriptions: Array<string>,
   doChannelSubscribe: ({ channelName: string, uri: string }) => void,
@@ -24,7 +24,7 @@ type Props = {
 
 export default function SubscribeButton(props: Props) {
   const {
-    uri,
+    permanentUrl,
     doChannelSubscribe,
     doChannelUnsubscribe,
     doOpenModal,
@@ -35,12 +35,13 @@ export default function SubscribeButton(props: Props) {
   } = props;
   const buttonRef = useRef();
   const isHovering = useHover(buttonRef);
-  const { claimName } = parseURI(uri);
+  const { channelName } = parseURI(permanentUrl);
+  const claimName = '@' + channelName;
   const subscriptionHandler = isSubscribed ? doChannelUnsubscribe : doChannelSubscribe;
   const subscriptionLabel = isSubscribed ? __('Following') : __('Follow');
   const unfollowOverride = isSubscribed && isHovering && __('Unfollow');
 
-  return (
+  return permanentUrl ? (
     <Button
       ref={buttonRef}
       iconColor="red"
@@ -56,7 +57,7 @@ export default function SubscribeButton(props: Props) {
 
         subscriptionHandler({
           channelName: claimName,
-          uri,
+          uri: permanentUrl,
         });
 
         if (showSnackBarOnSubscribe) {
@@ -64,5 +65,5 @@ export default function SubscribeButton(props: Props) {
         }
       }}
     />
-  );
+  ) : null;
 }

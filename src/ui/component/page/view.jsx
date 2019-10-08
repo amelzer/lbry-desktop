@@ -1,33 +1,31 @@
 // @flow
-import * as ICONS from 'constants/icons';
-import * as React from 'react';
+import type { Node } from 'react';
+import React, { Fragment } from 'react';
 import classnames from 'classnames';
-import Button from 'component/button';
+import SideBar from 'component/sideBar';
+import Header from 'component/header';
 
 type Props = {
-  children: React.Node | Array<React.Node>,
+  children: Node | Array<Node>,
   className: ?string,
   autoUpdateDownloaded: boolean,
   isUpgradeAvailable: boolean,
-  doDownloadUpgradeRequested: () => void,
+  fullscreen: boolean,
+  authenticated: boolean,
 };
 
 function Page(props: Props) {
-  const { children, className, autoUpdateDownloaded, isUpgradeAvailable, doDownloadUpgradeRequested } = props;
-  const showUpgradeButton = autoUpdateDownloaded || (process.platform === 'linux' && isUpgradeAvailable);
+  const { children, className, fullscreen = false, authenticated } = props;
+  const obscureSideBar = IS_WEB ? !authenticated : false;
 
   return (
-    <main className={classnames('main', className)}>
-      {/* @if TARGET='app' */}
-      {showUpgradeButton && (
-        <div className="main__status">
-          {__('Upgrade is ready')}
-          <Button button="alt" icon={ICONS.DOWNLOAD} label={__('Install now')} onClick={doDownloadUpgradeRequested} />
-        </div>
-      )}
-      {/* @endif */}
-      {children}
-    </main>
+    <Fragment>
+      <Header minimal={fullscreen} />
+      <div className={classnames('main-wrapper__inner')}>
+        <main className={classnames('main', className, { 'main--full-width': fullscreen })}>{children}</main>
+        {!fullscreen && <SideBar obscureSideBar={obscureSideBar} />}
+      </div>
+    </Fragment>
   );
 }
 

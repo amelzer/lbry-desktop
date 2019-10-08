@@ -38,9 +38,7 @@ function FollowingPage(props: Props) {
 
   return (
     <Page>
-      <div className="card card--section">
-        <TagsSelect showClose={false} title={__('Customize Your Tags')} />
-      </div>
+      <TagsSelect showClose={false} title={__('Follow New Tags')} />
       <div className="card">
         <ClaimList
           header={viewingSuggestedSubs ? __('Discover New Channels') : __('Channels You Follow')}
@@ -51,7 +49,7 @@ function FollowingPage(props: Props) {
               onClick={() => onClick()}
             />
           }
-          uris={viewingSuggestedSubs ? suggestedSubscriptions.map(sub => sub.uri) : channelUris}
+          uris={viewingSuggestedSubs ? suggestedSubscriptions.map(sub => `lbry://${sub.uri}`) : channelUris}
         />
       </div>
     </Page>

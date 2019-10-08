@@ -3,43 +3,47 @@ import React, { useEffect } from 'react';
 import Button from 'component/button';
 import ClaimList from 'component/claimList';
 import Page from 'component/page';
+import Paginate from 'component/common/paginate';
+import { PAGE_SIZE } from 'constants/claim';
 
 type Props = {
-  uris: Array<string>,
   checkPendingPublishes: () => void,
   fetching: boolean,
+  urls: Array<string>,
+  urlTotal: ?number,
+  history: { replace: string => void },
+  page: number,
 };
 
 function FileListPublished(props: Props) {
-  const { checkPendingPublishes, fetching, uris } = props;
-
+  const { checkPendingPublishes, fetching, urls, urlTotal } = props;
   useEffect(() => {
     checkPendingPublishes();
   }, [checkPendingPublishes]);
 
   return (
     <Page notContained>
-      {uris && uris.length ? (
+      {urls && urls.length ? (
         <div className="card">
           <ClaimList
             header={__('Your Publishes')}
             loading={fetching}
             persistedStorageKey="claim-list-published"
-            uris={uris}
-            defaultSort
+            uris={urls}
             headerAltControls={<Button button="link" label={__('New Publish')} navigate="/$/publish" />}
           />
+          <Paginate totalPages={Math.ceil(Number(urlTotal) / Number(PAGE_SIZE))} loading={fetching} />
         </div>
       ) : (
-        <div className="main--empty">
-          <section className="card card--section">
-            <h2 className="card__title">{__("It looks like you haven't published anything to LBRY yet.")}</h2>
+        <section className="main--empty">
+          <div className=" section--small">
+            <h2 className="section__title--large">{__('Nothing published to LBRY yet.')}</h2>
 
-            <div className="card__actions card__actions--center">
+            <div className="section__actions">
               <Button button="primary" navigate="/$/publish" label={__('Publish something new')} />
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
       )}
     </Page>
   );

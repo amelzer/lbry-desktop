@@ -5,6 +5,7 @@ import ReactDOMServer from 'react-dom/server';
 import SimpleMDE from 'react-simplemde-editor';
 import MarkdownPreview from 'component/common/markdown-preview-internal';
 import { openEditorMenu, stopContextMenu } from 'util/context-menu';
+import { MAX_CHARACTERS_IN_COMMENT as defaultTextAreaLimit } from 'constants/comments';
 import 'easymde/dist/easymde.min.css';
 
 type Props = {
@@ -30,6 +31,8 @@ type Props = {
   },
   inputButton?: React$Node,
   blockWrap: boolean,
+  charCount?: number,
+  textAreaMaxLength?: number,
 };
 
 export class FormField extends React.PureComponent<Props> {
@@ -71,6 +74,8 @@ export class FormField extends React.PureComponent<Props> {
       inputButton,
       labelOnLeft,
       blockWrap,
+      charCount,
+      textAreaMaxLength = defaultTextAreaLimit,
       ...inputProps
     } = this.props;
     const errorMessage = typeof error === 'object' ? error.message : error;
@@ -99,9 +104,11 @@ export class FormField extends React.PureComponent<Props> {
         input = (
           <Wrapper>
             <checkbox-element {...elementProps}>
-              <input id={name} type="checkbox" {...inputProps} />
-              <label htmlFor={name}>{label}</label>
-              <checkbox-toggle onClick={inputProps.onChange} />
+              <input id={name} type="checkbox" {...inputProps} tabIndex={0} />
+              <label htmlFor={name} tabIndex={-1}>
+                {label}
+              </label>
+              <checkbox-toggle onClick={inputProps.onChange} tabIndex={-1} />
             </checkbox-element>
           </Wrapper>
         );
@@ -141,10 +148,15 @@ export class FormField extends React.PureComponent<Props> {
           </div>
         );
       } else if (type === 'textarea') {
+        const hasCharCount = charCount !== undefined && charCount >= 0;
+        const countInfo = hasCharCount && (
+          <span className="comment__char-count">{`${charCount || '0'}/${textAreaMaxLength}`}</span>
+        );
         input = (
           <fieldset-section>
             <label htmlFor={name}>{label}</label>
-            <textarea type={type} id={name} {...inputProps} />
+            <textarea type={type} id={name} maxLength={textAreaMaxLength} {...inputProps} />
+            {countInfo}
           </fieldset-section>
         );
       } else {
@@ -162,11 +174,7 @@ export class FormField extends React.PureComponent<Props> {
           <React.Fragment>
             <fieldset-section>
               <label htmlFor={name}>{errorMessage ? <span className="error-text">{errorMessage}</span> : label}</label>
-              {prefix && (
-                <label className="form-field--inline-prefix" htmlFor={name}>
-                  {prefix}
-                </label>
-              )}
+              {prefix && <label htmlFor={name}>{prefix}</label>}
               {inner}
             </fieldset-section>
           </React.Fragment>

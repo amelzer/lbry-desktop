@@ -24,9 +24,8 @@ body {
   cursor: default;
   font-size: 1rem;
   font-weight: 400;
-  height: 100%;
   line-height: 1.5;
-  background-color: mix($lbry-white, $lbry-gray-1, 70%);
+  background-color: var(--color-background);
 
   [data-mode='dark'] & {
     background-color: var(--dm-color-08);
@@ -49,14 +48,12 @@ p {
 
 ul,
 ol {
-  margin-bottom: var(--spacing-large);
-}
-
-ul {
   list-style: initial;
 
   li {
-    margin: var(--spacing-medium) 0;
+    list-style-position: outside;
+    margin: var(--spacing-medium);
+    margin-bottom: 0;
   }
 }
 
@@ -66,6 +63,38 @@ ul {
 
   li {
     margin: 0;
+  }
+}
+
+dl {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  overflow-x: visible;
+  margin-top: var(--spacing-medium);
+}
+
+dt {
+  flex-basis: 40%;
+  text-align: left;
+  font-weight: bold;
+}
+
+dd {
+  flex-basis: 55%;
+  flex-grow: 1;
+  margin: 0;
+  text-align: right;
+}
+
+dt,
+dd {
+  padding: var(--spacing-medium) var(--spacing-small);
+
+  border-top: 1px solid $lbry-gray-1;
+
+  &:last-of-type {
+    border-bottom: 1px solid $lbry-gray-1;
   }
 }
 
@@ -107,10 +136,13 @@ a {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  flex-wrap: wrap;
 
   > * {
     flex-grow: 1;
     flex-basis: 0;
+    min-width: 15rem;
+    margin-bottom: var(--spacing-large);
 
     &:first-child {
       margin-right: 1.5rem;
@@ -251,14 +283,5 @@ fieldset,
 legend {
   [data-mode='dark'] & {
     border-color: transparent;
-  }
-}
-
-checkbox-toggle,
-.checkbox-toggle,
-radio-toggle,
-.radio-toggle {
-  [data-mode='dark'] & {
-    border-color: var(--dm-color-04);
   }
 }

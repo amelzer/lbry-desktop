@@ -1,4 +1,5 @@
 // @flow
+import * as SETTINGS from 'constants/settings';
 import * as NOTIFICATION_TYPES from 'constants/subscriptions';
 import { PAGE_SIZE } from 'constants/claim';
 import * as MODALS from 'constants/modal_types';
@@ -11,10 +12,8 @@ import { setSubscriptionLatest, doUpdateUnreadSubscriptions } from 'redux/action
 import { makeSelectUnreadByChannel } from 'redux/selectors/subscriptions';
 import {
   ACTIONS,
-  SETTINGS,
   Lbry,
   Lbryapi,
-  buildURI,
   makeSelectFileInfoForUri,
   selectFileInfosByOutpoint,
   makeSelectChannelForClaimUri,
@@ -67,14 +66,15 @@ export function doUpdateLoadStatus(uri: string, outpoint: string) {
         });
 
         const channelUri = makeSelectChannelForClaimUri(uri, true)(state);
-        const { claimName: channelName } = parseURI(channelUri);
+        const { channelName } = parseURI(channelUri);
+        const claimName = '@' + channelName;
 
         const unreadForChannel = makeSelectUnreadByChannel(channelUri)(state);
         if (unreadForChannel && unreadForChannel.type === NOTIFICATION_TYPES.DOWNLOADING) {
           const count = unreadForChannel.uris.length;
 
           if (selectosNotificationsEnabled(state)) {
-            const notif = new window.Notification(channelName, {
+            const notif = new window.Notification(claimName, {
               body: `Posted ${fileInfo.metadata.title}${
                 count > 1 && count < 10 ? ` and ${count - 1} other new items` : ''
               }${count > 9 ? ' and 9+ other new items' : ''}`,
@@ -154,16 +154,10 @@ export function doFetchClaimsByChannel(uri: string, page: number = 1, pageSize: 
           dispatch(
             setSubscriptionLatest(
               {
-                channelName: latest.channel_name,
-                uri: buildURI(
-                  {
-                    contentName: latest.channel_name,
-                    claimId: latest.claim_id,
-                  },
-                  false
-                ),
+                channelName: latest.signing_channel.name,
+                uri: latest.signing_channel.permanent_url,
               },
-              buildURI({ contentName: latest.name, claimId: latest.claim_id }, false)
+              latest.permanent_url
             )
           );
         }
@@ -207,7 +201,7 @@ export function doPlayUri(uri: string, skipCostCheck: boolean = false, saveFileO
 
     const daemonSettings = selectDaemonSettings(state);
     const costInfo = makeSelectCostInfoForUri(uri)(state);
-    const cost = Number(costInfo.cost);
+    const cost = (costInfo && Number(costInfo.cost)) || 0;
     const saveFile = !uriIsStreamable ? true : daemonSettings.save_files || saveFileOverride || cost > 0;
     const instantPurchaseEnabled = makeSelectClientSetting(SETTINGS.INSTANT_PURCHASE_ENABLED)(state);
     const instantPurchaseMax = makeSelectClientSetting(SETTINGS.INSTANT_PURCHASE_MAX)(state);
@@ -218,7 +212,7 @@ export function doPlayUri(uri: string, skipCostCheck: boolean = false, saveFileO
 
     function attemptPlay(instantPurchaseMax = null) {
       // If you have a file_list entry, you have already purchased the file
-      if (!fileInfo && (!instantPurchaseMax || cost > instantPurchaseMax)) {
+      if (!fileInfo && (!instantPurchaseMax || !instantPurchaseEnabled || cost > instantPurchaseMax)) {
         dispatch(doOpenModal(MODALS.AFFIRM_PURCHASE, { uri }));
       } else {
         beginGetFile();

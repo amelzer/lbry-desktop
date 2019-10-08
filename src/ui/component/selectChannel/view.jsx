@@ -4,11 +4,11 @@ import { isNameValid } from 'lbry-redux';
 import { FormField } from 'component/common/form';
 import BusyIndicator from 'component/common/busy-indicator';
 import Button from 'component/button';
-import { CHANNEL_NEW, CHANNEL_ANONYMOUS } from 'constants/claim';
+import { CHANNEL_NEW, CHANNEL_ANONYMOUS, INVALID_NAME_ERROR } from 'constants/claim';
 
 type Props = {
   channel: string, // currently selected channel
-  channels: Array<{ name: string }>,
+  channels: ?Array<{ name: string }>,
   balance: number,
   onChannelChange: string => void,
   createChannel: (string, number) => Promise<any>,
@@ -48,7 +48,7 @@ class ChannelSection extends React.PureComponent<Props, State> {
 
   componentDidMount() {
     const { channels, fetchChannelListMine, fetchingChannels } = this.props;
-    if (!channels.length && !fetchingChannels) {
+    if ((!channels || !channels.length) && !fetchingChannels) {
       fetchChannelListMine();
     }
   }
@@ -77,7 +77,7 @@ class ChannelSection extends React.PureComponent<Props, State> {
 
     let newChannelNameError;
     if (newChannelName.length > 0 && !isNameValid(newChannelName, false)) {
-      newChannelNameError = __('LBRY names cannot contain spaces or reserved symbols ($#@;/"<>%{}|^~[]`)');
+      newChannelNameError = INVALID_NAME_ERROR;
     }
 
     this.setState({
@@ -165,11 +165,12 @@ class ChannelSection extends React.PureComponent<Props, State> {
               value={channel}
             >
               <option value={CHANNEL_ANONYMOUS}>{__('Anonymous')}</option>
-              {channels.map(({ name }) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
+              {channels &&
+                channels.map(({ name }) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
               <option value={CHANNEL_NEW}>{__('New channel...')}</option>
             </FormField>
           </fieldset-section>

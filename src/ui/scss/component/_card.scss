@@ -17,17 +17,9 @@
   pointer-events: none;
 }
 
-.card--link {
-  cursor: pointer;
-}
-
 .card--section {
   position: relative;
   padding: var(--spacing-large);
-}
-
-.card--space-between {
-  @include between;
 }
 
 .card--wallet-balance {
@@ -45,8 +37,24 @@
   font-weight: 700;
 }
 
-.card--modal {
-  box-shadow: none;
+.card--inline {
+  border: 1px solid $lbry-gray-1;
+  border-radius: var(--card-radius);
+  margin-bottom: var(--spacing-medium);
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+
+  [data-mode='dark'] & {
+    border-color: var(--dm-color-03);
+  }
+}
+
+.card--claim-preview-wrap {
+  @extend .card;
+  margin: var(--spacing-xlarge) 0;
+  min-width: 35rem;
 }
 
 //  C A R D
@@ -55,7 +63,7 @@
 .card__actions {
   display: flex;
   align-items: center;
-  margin-top: var(--spacing-medium);
+  margin-top: var(--spacing-large);
   font-size: var(--font-body);
 
   &:only-child {
@@ -76,35 +84,10 @@
   @include between;
 }
 
-.card__actions--bottom-corner {
-  right: 2rem;
-  bottom: 2rem;
-  position: absolute;
-}
-
 .card__actions--center {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.card__actions--top-corner {
-  top: 0;
-  right: 0;
-  position: absolute;
-}
-
-.card__actions--top-space {
-  padding-top: var(--spacing-small);
-}
-
-.card__actions--table {
-  padding: var(--spacing-medium);
-}
-
-.card__content--large {
-  font-size: var(--font-heading);
-  font-weight: 600;
 }
 
 //  C A R D
@@ -182,7 +165,8 @@
   display: flex;
   align-items: center;
   margin-bottom: var(--spacing-small);
-  font-size: var(--font-title);
+  font-size: var(--font-section-title);
+  font-weight: 300;
 
   & > *:not(:last-child) {
     margin-right: var(--spacing-medium);
@@ -201,4 +185,30 @@
 .card__media--disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+
+.card__header {
+  padding: var(--spacing-large);
+}
+
+.card__body {
+  padding: var(--spacing-large);
+  padding-top: 0;
+}
+
+.card__main-actions {
+  padding: var(--spacing-large);
+  background-color: var(--color-card-actions);
+  color: darken($lbry-gray-5, 15%);
+  font-size: var(--font-body);
+
+  [data-mode='dark'] & {
+    background-color: var(--color-card-actions--dark);
+    color: inherit;
+  }
+}
+
+.card__body--with-icon,
+.card__main-actions--with-icon {
+  padding-left: 7.5rem;
 }

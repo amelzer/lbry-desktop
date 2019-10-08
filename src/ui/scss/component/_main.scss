@@ -1,6 +1,5 @@
 .main-wrapper {
   position: relative;
-  min-height: 100vh;
 
   [data-mode='dark'] & {
     background-color: var(--dm-color-08);
@@ -11,6 +10,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  min-height: calc(100vh - var(--header-height));
   max-width: var(--page-max-width);
   margin-left: auto;
   margin-right: auto;
@@ -19,7 +19,9 @@
 }
 
 .main {
-  width: calc(100% - var(--side-nav-width) - var(--spacing-main-padding));
+  position: relative;
+  width: calc(100% - var(--side-nav-width) - var(--spacing-large));
+  margin-right: var(--spacing-main-padding);
 
   @media (max-width: 600px) {
     width: 100%;
@@ -41,9 +43,17 @@
   }
 }
 
+.main--auth-page {
+  max-width: 60rem;
+  margin-top: var(--spacing-main-padding);
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .main--empty {
-  align-items: center;
+  align-self: center;
   display: flex;
+  align-items: center;
   flex-direction: column;
   margin-top: 100px;
   margin-bottom: 100px;
@@ -54,6 +64,24 @@
   width: 100vw;
   height: 100vh;
   background-color: var(--color-background);
+}
+
+.main--contained {
+  margin: auto;
+  margin-top: 5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 40rem;
+  text-align: left;
+
+  & > * {
+    width: 100%;
+  }
+}
+
+.main--full-width {
+  width: 100%;
 }
 
 .main__status {

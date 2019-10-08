@@ -1,4 +1,4 @@
-export const AUTH = 'auth';
+export const AUTH = 'signin';
 export const BACKUP = 'backup';
 export const CHANNEL = 'channel';
 export const DISCOVER = 'discover';
@@ -20,4 +20,7 @@ export const SEARCH = 'search';
 export const TRANSACTIONS = 'transactions';
 export const TAGS = 'tags';
 export const WALLET = 'wallet';
+export const WALLET_SEND = 'wallet/send';
+export const WALLET_RECEIVE = 'wallet/receive';
 export const BLOCKED = 'blocked';
+export const CHANNELS = 'channels';

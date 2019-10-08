@@ -5,26 +5,37 @@ import {
   makeSelectClaimForUri,
   makeSelectIsUriResolving,
   makeSelectTotalPagesForChannel,
-  buildURI,
+  normalizeURI,
 } from 'lbry-redux';
 import { selectBlackListedOutpoints } from 'lbryinc';
 import ShowPage from './view';
 
 const select = (state, props) => {
-  const { pathname } = props.location;
-  const urlParts = pathname.split('/');
-  const claimName = urlParts[1];
-  const claimId = urlParts[2];
+  const { pathname, hash } = props.location;
+  const urlPath = pathname + hash;
+  // Remove the leading "/" added by the browser
+  const path = urlPath.slice(1).replace(/:/g, '#');
 
-  // claimName and claimId come from the url `lbry.tv/{claimName}/{claimId}"
-  const uri = buildURI({ contentName: claimName, claimId: claimId });
+  let uri;
+  try {
+    uri = normalizeURI(path);
+  } catch (e) {
+    const match = path.match(/[#/:]/);
+
+    if (path === '$/') {
+      props.history.replace(`/`);
+    } else if (!path.startsWith('$/') && match && match.index) {
+      uri = `lbry://${path.slice(0, match.index)}`;
+      props.history.replace(`/${path.slice(0, match.index)}`);
+    }
+  }
 
   return {
     claim: makeSelectClaimForUri(uri)(state),
     isResolvingUri: makeSelectIsUriResolving(uri)(state),
     blackListedOutpoints: selectBlackListedOutpoints(state),
     totalPages: makeSelectTotalPagesForChannel(uri, PAGE_SIZE)(state),
-    uri: uri,
+    uri,
   };
 };
 

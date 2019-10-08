@@ -8,6 +8,7 @@ import {
   doSetTransactionListFilter,
   selectIsFetchingTransactions,
 } from 'lbry-redux';
+import { withRouter } from 'react-router';
 import TransactionList from './view';
 
 const select = state => ({
@@ -23,7 +24,9 @@ const perform = dispatch => ({
   setTransactionFilter: filterSetting => dispatch(doSetTransactionListFilter(filterSetting)),
 });
 
-export default connect(
-  select,
-  perform
-)(TransactionList);
+export default withRouter(
+  connect(
+    select,
+    perform
+  )(TransactionList)
+);

@@ -1,10 +1,29 @@
 .navigation {
   width: var(--side-nav-width);
   font-size: var(--font-body);
-  // padding-top: 100px;
 
   @media (max-width: 600px) {
     display: none;
+  }
+}
+
+.navigation--placeholder {
+  @extend .navigation;
+  padding: 2rem 1.5rem;
+  border-radius: var(--card-radius);
+  font-size: var(--font-title);
+  font-weight: 600;
+  color: $lbry-white;
+  position: relative;
+  background-color: $lbry-black;
+
+  h2 {
+    font-size: 2rem;
+    font-weight: 600;
+  }
+
+  p {
+    font-size: 1.5rem;
   }
 }
 
@@ -18,6 +37,10 @@
 .navigation-links--small {
   @extend .navigation-links;
   font-size: var(--font-multiplier-small);
+}
+
+.navigation-links__inline {
+  margin-left: calc(var(--spacing-medium) + var(--spacing-small));
 }
 
 .navigation-link__wrapper {
@@ -54,10 +77,10 @@
   }
 
   [data-mode='dark'] & {
-    color: var(--dm-color-01);
+    color: darken($lbry-white, 30%);
 
     svg {
-      stroke: var(--dm-color-01);
+      stroke: darken($lbry-white, 30%);
     }
 
     &:hover,

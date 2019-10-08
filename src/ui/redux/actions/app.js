@@ -6,6 +6,8 @@ import { ipcRenderer, remote } from 'electron';
 import path from 'path';
 import * as ACTIONS from 'constants/action_types';
 import * as MODALS from 'constants/modal_types';
+import * as PAGES from 'constants/pages';
+import * as SETTINGS from 'constants/settings';
 import {
   Lbry,
   doBalanceSubscribe,
@@ -13,6 +15,10 @@ import {
   doError,
   makeSelectClaimForUri,
   makeSelectClaimIsMine,
+  doPopulateSharedUserState,
+  doFetchChannelListMine,
+  selectBalance,
+  doClearPublish,
 } from 'lbry-redux';
 import Native from 'native';
 import { doFetchDaemonSettings } from 'redux/actions/settings';
@@ -28,10 +34,13 @@ import {
   selectUpgradeTimer,
   selectModal,
 } from 'redux/selectors/app';
-import { doAuthenticate } from 'lbryinc';
+import { Lbryio, doAuthenticate, doGetSync, selectSyncHash, doResetSync } from 'lbryinc';
 import { lbrySettings as config, version as appVersion } from 'package.json';
 import { push } from 'connected-react-router';
 import analytics from 'analytics';
+import { deleteAuthToken, getSavedPassword } from 'util/saved-passwords';
+import cookie from 'cookie';
+import { makeSelectClientSetting } from 'redux/selectors/settings';
 
 // @if TARGET='app'
 const { autoUpdater } = remote.require('electron-updater');
@@ -307,6 +316,12 @@ export function doNotifyUnlockWallet() {
   };
 }
 
+export function doNotifyForgetPassword(props) {
+  return dispatch => {
+    dispatch(doOpenModal(MODALS.WALLET_PASSWORD_UNSAVE, props));
+  };
+}
+
 export function doAlertError(errorList) {
   return dispatch => {
     dispatch(doError(errorList));
@@ -316,13 +331,12 @@ export function doAlertError(errorList) {
 export function doDaemonReady() {
   return (dispatch, getState) => {
     const state = getState();
-
     dispatch(doAuthenticate(appVersion));
     dispatch({ type: ACTIONS.DAEMON_READY });
 
     // @if TARGET='app'
-    dispatch(doFetchDaemonSettings());
     dispatch(doBalanceSubscribe());
+    dispatch(doFetchDaemonSettings());
     dispatch(doFetchFileInfosAndPublishedClaims());
     if (!selectIsUpgradeSkipped(state)) {
       dispatch(doCheckUpgradeAvailable());
@@ -334,13 +348,13 @@ export function doDaemonReady() {
 }
 
 export function doClearCache() {
-  return () => {
+  return dispatch => {
     // Need to update this to work with new version of redux-persist
     // Leaving for now
     // const reducersToClear = whiteListedReducers.filter(reducerKey => reducerKey !== 'tags');
     // window.cacheStore.purge(reducersToClear);
     window.localStorage.clear();
-    return window.persistor.purge();
+    return dispatch(doClearPublish());
   };
 }
 
@@ -408,7 +422,7 @@ export function doConditionalAuthNavigate(newSession) {
     const modal = selectModal(state);
 
     if (newSession || (modal && modal.id !== MODALS.EMAIL_COLLECTION)) {
-      dispatch(push('/$/auth'));
+      dispatch(push(`/$/${PAGES.AUTH}`));
     }
   };
 }
@@ -427,9 +441,65 @@ export function doAnalyticsView(uri, timeToStart) {
     const outpoint = `${txid}:${nout}`;
 
     if (claimIsMine) {
-      return;
+      return Promise.resolve();
     }
 
-    analytics.apiLogView(uri, outpoint, claimId, timeToStart);
+    return analytics.apiLogView(uri, outpoint, claimId, timeToStart);
+  };
+}
+
+export function doSignIn() {
+  return (dispatch, getState) => {
+    // The balance is subscribed to on launch for desktop
+    // @if TARGET='web'
+    const { auth_token: authToken } = cookie.parse(document.cookie);
+    Lbry.setApiHeader('X-Lbry-Auth-Token', authToken);
+    dispatch(doBalanceSubscribe());
+    dispatch(doFetchChannelListMine());
+    dispatch(doCheckSubscriptionsInit());
+    // @endif
+
+    // @if TARGET='app'
+    const state = getState();
+    const syncEnabled = makeSelectClientSetting(SETTINGS.ENABLE_SYNC)(state);
+    const hasSyncedBefore = selectSyncHash(state);
+    const balance = selectBalance(state);
+
+    // For existing users, check if they've synced before, or have 0 balance
+    if (syncEnabled && (hasSyncedBefore || balance === 0)) {
+      getSavedPassword().then(password => {
+        const passwordArgument = password === null ? '' : password;
+        dispatch(doGetSync(passwordArgument, !hasSyncedBefore));
+
+        setInterval(() => {
+          dispatch(doGetSync(passwordArgument));
+        }, 1000 * 60 * 5);
+      });
+    }
+    // @endif
+
+    Lbryio.call('user_settings', 'get').then(settings => {
+      dispatch(doPopulateSharedUserState(settings));
+    });
+  };
+}
+
+export function doSignOut() {
+  return dispatch => {
+    deleteAuthToken()
+      .then(() => {
+        // @if TARGET='web'
+        window.persistor.purge();
+        // @endif
+        // @if TARGET='app'
+        return dispatch(doResetSync());
+        // @endif
+      })
+      .then(() => {
+        setTimeout(() => {
+          location.reload();
+        });
+      })
+      .catch(() => location.reload());
   };
 }

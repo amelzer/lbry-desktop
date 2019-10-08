@@ -1,43 +1,29 @@
 // @flow
-import * as React from 'react';
+import React, { useState } from 'react';
 import { FormField, Form } from 'component/common/form';
 import Button from 'component/button';
 import { Lbryio } from 'lbryinc';
 import analytics from 'analytics';
+import { EMAIL_REGEX } from 'constants/email';
+import I18nMessage from 'component/i18nMessage';
 
 type Props = {
-  cancelButton: React.Node,
   errorMessage: ?string,
   isPending: boolean,
   addUserEmail: string => void,
+  syncEnabled: boolean,
+  setSync: boolean => void,
+  balance: number,
 };
 
-type State = {
-  email: string,
-};
+function UserEmailNew(props: Props) {
+  const { errorMessage, isPending, addUserEmail, syncEnabled, setSync, balance } = props;
+  const [newEmail, setEmail] = useState('');
+  const [ageConfirmation, setAgeConfirmation] = useState(true);
+  const valid = newEmail.match(EMAIL_REGEX);
 
-class UserEmailNew extends React.PureComponent<Props, State> {
-  constructor() {
-    super();
-
-    this.state = {
-      email: '',
-    };
-
-    (this: any).handleSubmit = this.handleSubmit.bind(this);
-    (this: any).handleEmailChanged = this.handleEmailChanged.bind(this);
-  }
-
-  handleEmailChanged(event: SyntheticInputEvent<*>) {
-    this.setState({
-      email: event.target.value,
-    });
-  }
-
-  handleSubmit() {
-    const { email } = this.state;
-    const { addUserEmail } = this.props;
-    addUserEmail(email);
+  function handleSubmit() {
+    addUserEmail(newEmail);
     analytics.emailProvidedEvent();
 
     // @if TARGET='web'
@@ -45,40 +31,84 @@ class UserEmailNew extends React.PureComponent<Props, State> {
     // @endif
   }
 
-  render() {
-    const { cancelButton, errorMessage, isPending } = this.props;
+  React.useEffect(() => {
+    // Sync currently doesn't work for wallets with balances
+    if (syncEnabled && balance) {
+      setSync(false);
+    }
+  }, [balance, syncEnabled, setSync]);
 
-    return (
-      <React.Fragment>
-        <h2 className="card__title">{__('Verify Your Email')}</h2>
-        <p className="card__subtitle">
-          {/* @if TARGET='app' */}
-          {__("We'll let you know about LBRY updates, security issues, and great new content.")}
-          {/* @endif */}
-          {/* @if TARGET='web' */}
-          {__('Stay up to date with lbry.tv and be the first to know about the progress we make.')}
-          {/* @endif */}
-        </p>
-
-        <Form onSubmit={this.handleSubmit}>
+  return (
+    <div>
+      <h1 className="section__title--large">{__('Welcome To LBRY')}</h1>
+      <p className="section__subtitle">{__('Create a new account or sign in.')}</p>
+      <Form onSubmit={handleSubmit} className="section__body">
+        <FormField
+          autoFocus
+          className="form-field--short"
+          placeholder={__('hotstuff_96@hotmail.com')}
+          type="email"
+          name="sign_up_email"
+          label={__('Email')}
+          value={newEmail}
+          error={errorMessage}
+          onChange={e => setEmail(e.target.value)}
+        />
+        <div className="section">
           <FormField
-            type="email"
-            label="Email"
-            placeholder="youremail@example.org"
-            name="email"
-            value={this.state.email}
-            error={errorMessage}
-            onChange={this.handleEmailChanged}
-            inputButton={
-              <Button type="submit" button="inverse" label="Submit" disabled={isPending || !this.state.email} />
+            type="checkbox"
+            name="age_checkbox"
+            label={
+              <I18nMessage
+                tokens={{
+                  terms: (
+                    <Button button="link" href="https://www.lbry.com/termsofservice" label={__('Terms of Service')} />
+                  ),
+                }}
+              >
+                I am over the age of 13 and agree to the %terms%.
+              </I18nMessage>
             }
+            checked={ageConfirmation}
+            onChange={() => setAgeConfirmation(!ageConfirmation)}
           />
-        </Form>
-        <div className="card__actions">{cancelButton}</div>
-        <p className="help">{__('Your email address will never be sold and you can unsubscribe at any time.')}</p>
-      </React.Fragment>
-    );
-  }
+          {!IS_WEB && (
+            <FormField
+              type="checkbox"
+              name="sync_checkbox"
+              label={__('Sync balance and preferences across devices')}
+              helper={
+                balance > 0 ? (
+                  __('This feature is not yet available for wallets with balances, but the gerbils are working on it.')
+                ) : (
+                  <I18nMessage
+                    tokens={{
+                      learn_more: (
+                        <Button button="link" href="https://lbry.com/faq/account-sync" label={__('Learn More')} />
+                      ),
+                    }}
+                  >
+                    Blockchain expert? %learn_more%
+                  </I18nMessage>
+                )
+              }
+              checked={syncEnabled}
+              onChange={() => setSync(!syncEnabled)}
+              disabled={balance > 0}
+            />
+          )}
+          <div className="card__actions">
+            <Button
+              button="primary"
+              type="submit"
+              label={__('Continue')}
+              disabled={!newEmail || !valid || !ageConfirmation || isPending}
+            />
+          </div>
+        </div>
+      </Form>
+    </div>
+  );
 }
 
 export default UserEmailNew;

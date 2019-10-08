@@ -13,65 +13,92 @@ import RewardsPage from 'page/rewards';
 import FileListDownloaded from 'page/fileListDownloaded';
 import FileListPublished from 'page/fileListPublished';
 import TransactionHistoryPage from 'page/transactionHistory';
-import AuthPage from 'page/auth';
 import InvitePage from 'page/invite';
 import SearchPage from 'page/search';
 import LibraryPage from 'page/library';
 import WalletPage from 'page/wallet';
-import NavigationHistory from 'page/navigationHistory';
+import WalletSendPage from 'page/walletSend';
+import WalletReceivePage from 'page/walletReceive';
 import TagsPage from 'page/tags';
 import FollowingPage from 'page/following';
-import ListBlocked from 'page/listBlocked';
+import ListBlockedPage from 'page/listBlocked';
+import FourOhFourPage from 'page/fourOhFour';
+import SignInPage from 'page/signIn';
+import ChannelsPage from 'page/channels';
 
 // Tell the browser we are handling scroll restoration
 if ('scrollRestoration' in history) {
   history.scrollRestoration = 'manual';
 }
 
+type PrivateRouteProps = {
+  component: any,
+  isAuthenticated: boolean,
+  location: { pathname: string },
+};
+
+function PrivateRoute(props: PrivateRouteProps) {
+  const { component: Component, isAuthenticated, ...rest } = props;
+  return (
+    <Route
+      {...rest}
+      render={props =>
+        isAuthenticated || !IS_WEB ? (
+          <Component {...props} />
+        ) : (
+          <Redirect to={`/$/${PAGES.AUTH}?redirect=${props.location.pathname}`} />
+        )
+      }
+    />
+  );
+}
+
 type Props = {
   currentScroll: number,
   location: { pathname: string, search: string },
+  isAuthenticated: boolean,
 };
 
 function AppRouter(props: Props) {
-  const { currentScroll, location } = props;
-  const { pathname, search } = location;
-
-  // Don't update the scroll position if only the `page` param changes
-  const url = `${pathname}${search.replace(/&?\??page=\d+/, '')}`;
+  const {
+    currentScroll,
+    location: { pathname },
+  } = props;
 
   useEffect(() => {
     window.scrollTo(0, currentScroll);
-  }, [currentScroll, url]);
+  }, [currentScroll, pathname]);
 
   return (
     <Switch>
       <Route path="/" exact component={DiscoverPage} />
       <Route path={`/$/${PAGES.DISCOVER}`} exact component={DiscoverPage} />
-      <Route path={`/$/${PAGES.AUTH}`} exact component={AuthPage} />
-      <Route path={`/$/${PAGES.INVITE}`} exact component={InvitePage} />
-      <Route path={`/$/${PAGES.DOWNLOADED}`} exact component={FileListDownloaded} />
-      <Route path={`/$/${PAGES.PUBLISHED}`} exact component={FileListPublished} />
-      <Route path={`/$/${PAGES.HELP}`} exact component={HelpPage} />
-      <Route path={`/$/${PAGES.PUBLISH}`} exact component={PublishPage} />
-      <Route path={`/$/${PAGES.REPORT}`} exact component={ReportPage} />
-      <Route path={`/$/${PAGES.REWARDS}`} exact component={RewardsPage} />
-      <Route path={`/$/${PAGES.SEARCH}`} exact component={SearchPage} />
-      <Route path={`/$/${PAGES.SETTINGS}`} exact component={SettingsPage} />
-      <Route path={`/$/${PAGES.TRANSACTIONS}`} exact component={TransactionHistoryPage} />
-      <Route path={`/$/${PAGES.LIBRARY}`} exact component={LibraryPage} />
-      <Route path={`/$/${PAGES.ACCOUNT}`} exact component={AccountPage} />
-      <Route path={`/$/${PAGES.LIBRARY}/all`} exact component={NavigationHistory} />
+      <Route path={`/$/${PAGES.AUTH}`} exact component={SignInPage} />
       <Route path={`/$/${PAGES.TAGS}`} exact component={TagsPage} />
-      <Route path={`/$/${PAGES.FOLLOWING}`} exact component={FollowingPage} />
-      <Route path={`/$/${PAGES.WALLET}`} exact component={WalletPage} />
-      <Route path={`/$/${PAGES.BLOCKED}`} exact component={ListBlocked} />
+      <Route path={`/$/${PAGES.HELP}`} exact component={HelpPage} />
+      <Route path={`/$/${PAGES.SEARCH}`} exact component={SearchPage} />
+
+      <PrivateRoute {...props} path={`/$/${PAGES.INVITE}`} component={InvitePage} />
+      <PrivateRoute {...props} path={`/$/${PAGES.DOWNLOADED}`} component={FileListDownloaded} />
+      <PrivateRoute {...props} path={`/$/${PAGES.PUBLISHED}`} component={FileListPublished} />
+      <PrivateRoute {...props} path={`/$/${PAGES.PUBLISH}`} component={PublishPage} />
+      <PrivateRoute {...props} path={`/$/${PAGES.REPORT}`} component={ReportPage} />
+      <PrivateRoute {...props} path={`/$/${PAGES.REWARDS}`} component={RewardsPage} />
+      <PrivateRoute {...props} path={`/$/${PAGES.SETTINGS}`} component={SettingsPage} />
+      <PrivateRoute {...props} path={`/$/${PAGES.TRANSACTIONS}`} component={TransactionHistoryPage} />
+      <PrivateRoute {...props} path={`/$/${PAGES.LIBRARY}`} component={LibraryPage} />
+      <PrivateRoute {...props} path={`/$/${PAGES.ACCOUNT}`} component={AccountPage} />
+      <PrivateRoute {...props} path={`/$/${PAGES.FOLLOWING}`} component={FollowingPage} />
+      <PrivateRoute {...props} path={`/$/${PAGES.BLOCKED}`} component={ListBlockedPage} />
+      <PrivateRoute {...props} path={`/$/${PAGES.WALLET}`} exact component={WalletPage} />
+      <PrivateRoute {...props} path={`/$/${PAGES.WALLET_SEND}`} exact component={WalletSendPage} />
+      <PrivateRoute {...props} path={`/$/${PAGES.WALLET_RECEIVE}`} exact component={WalletReceivePage} />
+      <PrivateRoute {...props} path={`/$/${PAGES.CHANNELS}`} component={ChannelsPage} />
+
       {/* Below need to go at the end to make sure we don't match any of our pages first */}
       <Route path="/:claimName" exact component={ShowPage} />
-      <Route path="/:claimName/:contentName" exact component={ShowPage} />
-
-      {/* Route not found. Mostly for people typing crazy urls into the url */}
-      <Route render={() => <Redirect to="/" />} />
+      <Route path="/:claimName/:streamName" exact component={ShowPage} />
+      <Route path="/*" component={FourOhFourPage} />
     </Switch>
   );
 }

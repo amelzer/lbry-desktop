@@ -1,10 +1,12 @@
 // @flow
+import type { Node } from 'react';
 import React, { Fragment, useEffect, forwardRef } from 'react';
 import classnames from 'classnames';
 import { parseURI, convertToShareLink } from 'lbry-redux';
 import { withRouter } from 'react-router-dom';
 import { openCopyLinkMenu } from 'util/context-menu';
 import { formatLbryUriForWeb } from 'util/uri';
+import { isEmpty } from 'util/object';
 import CardMedia from 'component/cardMedia';
 import UriIndicator from 'component/uriIndicator';
 import TruncatedText from 'component/common/truncated-text';
@@ -25,7 +27,6 @@ type Props = {
   pending?: boolean,
   resolveUri: string => void,
   isResolvingUri: boolean,
-  preventResolve: boolean,
   history: { push: string => void },
   thumbnail: string,
   title: string,
@@ -45,6 +46,9 @@ type Props = {
   channelIsBlocked: boolean,
   isSubscribed: boolean,
   beginPublish: string => void,
+  actions: boolean | Node | string | number,
+  properties: boolean | Node | string | number,
+  onClick?: any => any,
 };
 
 const ClaimPreview = forwardRef<any, {}>((props: Props, ref: any) => {
@@ -70,31 +74,41 @@ const ClaimPreview = forwardRef<any, {}>((props: Props, ref: any) => {
     channelIsBlocked,
     isSubscribed,
     beginPublish,
+    actions,
+    properties,
+    onClick,
   } = props;
-  const haventFetched = claim === undefined;
+  const shouldFetch =
+    claim === undefined || (claim !== null && claim.value_type === 'channel' && isEmpty(claim.meta) && !pending);
   const abandoned = !isResolvingUri && !claim;
   const claimsInChannel = (claim && claim.meta.claims_in_channel) || 0;
   const showPublishLink = abandoned && placeholder === 'publish';
-  const includeChannelTooltip = type !== 'inline' && type !== 'tooltip';
   const hideActions = type === 'small' || type === 'tooltip';
 
-  let isValid;
   let name;
-  try {
-    ({ claimName: name } = parseURI(uri));
-    isValid = true;
-  } catch (e) {
-    isValid = false;
+  let isValid = false;
+  if (uri) {
+    try {
+      ({ streamName: name } = parseURI(uri));
+      isValid = true;
+    } catch (e) {
+      isValid = false;
+    }
   }
 
   const isChannel = isValid ? parseURI(uri).isChannel : false;
+  const includeChannelTooltip = type !== 'inline' && type !== 'tooltip' && !isChannel;
   const signingChannel = claim && claim.signing_channel;
   let shouldHide =
     placeholder !== 'loading' && ((abandoned && !showPublishLink) || (!claimIsMine && obscureNsfw && nsfw));
 
   // This will be replaced once blocking is done at the wallet server level
   if (claim && !shouldHide && blackListedOutpoints) {
-    shouldHide = blackListedOutpoints.some(outpoint => outpoint.txid === claim.txid && outpoint.nout === claim.nout);
+    shouldHide = blackListedOutpoints.some(
+      outpoint =>
+        (signingChannel && outpoint.txid === signingChannel.txid && outpoint.nout === signingChannel.nout) ||
+        (outpoint.txid === claim.txid && outpoint.nout === claim.nout)
+    );
   }
   // We're checking to see if the stream outpoint
   // or signing channel outpoint is in the filter list
@@ -123,17 +137,19 @@ const ClaimPreview = forwardRef<any, {}>((props: Props, ref: any) => {
     }
   }
 
-  function onClick(e) {
-    if ((isChannel || title) && !pending) {
+  function handleOnClick(e) {
+    if (onClick) {
+      onClick(e);
+    } else if ((isChannel || title) && !pending) {
       history.push(formatLbryUriForWeb(uri));
     }
   }
 
   useEffect(() => {
-    if (isValid && !isResolvingUri && haventFetched && uri) {
+    if (isValid && !isResolvingUri && shouldFetch && uri) {
       resolveUri(uri);
     }
-  }, [isValid, isResolvingUri, uri, resolveUri, haventFetched]);
+  }, [isValid, isResolvingUri, uri, resolveUri, shouldFetch]);
 
   if (shouldHide) {
     return null;
@@ -155,7 +171,7 @@ const ClaimPreview = forwardRef<any, {}>((props: Props, ref: any) => {
     <li
       ref={ref}
       role="link"
-      onClick={pending || type === 'inline' ? undefined : onClick}
+      onClick={pending || type === 'inline' ? undefined : handleOnClick}
       onContextMenu={handleContextMenu}
       className={classnames('claim-preview', {
         'claim-preview--small': type === 'small' || type === 'tooltip',
@@ -172,20 +188,27 @@ const ClaimPreview = forwardRef<any, {}>((props: Props, ref: any) => {
           <div className="claim-preview-title">
             {claim ? <TruncatedText text={title || claim.name} lines={1} /> : <span>{__('Nothing here')}</span>}
           </div>
-          {!hideActions && (
-            <div className="card__actions--inline">
-              {isChannel && !channelIsBlocked && (
-                <SubscribeButton uri={uri.startsWith('lbry://') ? uri : `lbry://${uri}`} />
+          {!pending && (
+            <React.Fragment>
+              {!hideActions && actions !== undefined ? (
+                actions
+              ) : (
+                <div className="card__actions--inline">
+                  {isChannel && !channelIsBlocked && !claimIsMine && (
+                    <SubscribeButton uri={uri.startsWith('lbry://') ? uri : `lbry://${uri}`} />
+                  )}
+                  {isChannel && !isSubscribed && !claimIsMine && (
+                    <BlockButton uri={uri.startsWith('lbry://') ? uri : `lbry://${uri}`} />
+                  )}
+                  {!isChannel && claim && <FileProperties uri={uri} />}
+                </div>
               )}
-              {isChannel && !isSubscribed && <BlockButton uri={uri.startsWith('lbry://') ? uri : `lbry://${uri}`} />}
-              {!isChannel && <FileProperties uri={uri} />}
-            </div>
+            </React.Fragment>
           )}
         </div>
 
         <div className="claim-preview-properties">
           <div className="media__subtitle">
-            {pending && <div>Pending...</div>}
             {!isResolvingUri && (
               <div>
                 {claim ? (
@@ -203,16 +226,21 @@ const ClaimPreview = forwardRef<any, {}>((props: Props, ref: any) => {
                   </Fragment>
                 )}
                 <div>
-                  {isChannel ? (
-                    type !== 'inline' && `${claimsInChannel} ${__('publishes')}`
+                  {pending ? (
+                    <div>Pending...</div>
                   ) : (
-                    <DateTime timeAgo uri={uri} />
+                    claim &&
+                    (isChannel ? (
+                      type !== 'inline' && `${claimsInChannel} ${__('publishes')}`
+                    ) : (
+                      <DateTime timeAgo uri={uri} />
+                    ))
                   )}
                 </div>
               </div>
             )}
           </div>
-          <ClaimTags uri={uri} type={type} />
+          {properties !== undefined ? properties : <ClaimTags uri={uri} type={type} />}
         </div>
       </div>
     </li>

@@ -1,12 +1,20 @@
 // @flow
 import { remote } from 'electron';
-import React, { Suspense } from 'react';
+import React, { Suspense, Fragment } from 'react';
 import LoadingScreen from 'component/common/loading-screen';
 import VideoViewer from 'component/viewers/videoViewer';
 import ImageViewer from 'component/viewers/imageViewer';
 import AppViewer from 'component/viewers/appViewer';
+import Button from 'component/button';
+import { withRouter } from 'react-router-dom';
+import { formatLbryUriForWeb } from 'util/uri';
+// @if TARGET='web'
+import { generateStreamUrl } from 'util/lbrytv';
+// @endif
+
 import path from 'path';
 import fs from 'fs';
+import Yrbl from 'component/yrbl';
 
 const DocumentViewer = React.lazy<*>(() =>
   import(
@@ -61,6 +69,10 @@ type Props = {
   currentTheme: string,
   downloadPath: string,
   fileName: string,
+  autoplay: boolean,
+  nextFileToPlay: string,
+  nextUnplayed: string,
+  history: { push: string => void },
 };
 
 class FileRender extends React.PureComponent<Props> {
@@ -68,6 +80,7 @@ class FileRender extends React.PureComponent<Props> {
     super(props);
 
     (this: any).escapeListener = this.escapeListener.bind(this);
+    (this: any).onEndedCb = this.onEndedCb.bind(this);
   }
 
   componentDidMount() {
@@ -92,13 +105,20 @@ class FileRender extends React.PureComponent<Props> {
     remote.getCurrentWindow().setFullScreen(false);
   }
 
+  onEndedCb() {
+    const { autoplay, nextUnplayed, history } = this.props;
+    if (autoplay && nextUnplayed) {
+      history.push(formatLbryUriForWeb(nextUnplayed));
+    }
+  }
+
   renderViewer() {
     const { mediaType, currentTheme, claim, contentType, downloadPath, fileName, streamingUrl, uri } = this.props;
     const fileType = fileName && path.extname(fileName).substring(1);
 
     // Ideally the lbrytv api server would just replace the streaming_url returned by the sdk so we don't need this check
     // https://github.com/lbryio/lbrytv/issues/51
-    const source = IS_WEB ? `https://api.lbry.tv/content/claims/${claim.name}/${claim.claim_id}/stream` : streamingUrl;
+    const source = IS_WEB ? generateStreamUrl(claim.name, claim.claim_id) : streamingUrl;
 
     // Human-readable files (scripts and plain-text files)
     const readableFiles = ['text', 'document', 'script'];
@@ -111,8 +131,8 @@ class FileRender extends React.PureComponent<Props> {
       application: <AppViewer uri={uri} />,
       // @endif
 
-      video: <VideoViewer uri={uri} source={source} contentType={contentType} />,
-      audio: <VideoViewer uri={uri} source={source} contentType={contentType} />,
+      video: <VideoViewer uri={uri} source={source} contentType={contentType} onEndedCB={this.onEndedCb} />,
+      audio: <VideoViewer uri={uri} source={source} contentType={contentType} onEndedCB={this.onEndedCb} />,
       image: <ImageViewer uri={uri} source={source} />,
       // Add routes to viewer...
     };
@@ -155,9 +175,32 @@ class FileRender extends React.PureComponent<Props> {
     }
     // @endif
 
-    // Message Error
-    const unsupportedMessage = __("Sorry, we can't preview this file.");
-    const unsupported = <LoadingScreen status={unsupportedMessage} spinner={false} />;
+    const unsupported = IS_WEB ? (
+      <div className={'content__cover--disabled'}>
+        <Yrbl
+          className={'content__cover--disabled'}
+          title={'Not available on lbry.tv'}
+          subtitle={
+            <Fragment>
+              <p>
+                {__('Good news, though! You can')}{' '}
+                <Button button="link" label={__('Download the desktop app')} href="https://lbry.com/get" />{' '}
+                {'and have access to all file types.'}
+              </p>
+            </Fragment>
+          }
+          uri={uri}
+        />
+      </div>
+    ) : (
+      <div className={'content__cover--disabled'}>
+        <Yrbl
+          title={'Content Downloaded'}
+          subtitle={'This file is unsupported here, but you can view the content in an application of your choice'}
+          uri={uri}
+        />
+      </div>
+    );
 
     // Return viewer
     return viewer || unsupported;
@@ -172,4 +215,4 @@ class FileRender extends React.PureComponent<Props> {
   }
 }
 
-export default FileRender;
+export default withRouter(FileRender);

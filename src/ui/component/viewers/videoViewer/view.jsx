@@ -14,15 +14,57 @@ const VIDEO_JS_OPTIONS = {
 };
 
 type Props = {
+  volume: number,
+  position: number,
+  muted: boolean,
+  hasFileInfo: boolean,
+  changeVolume: number => void,
+  savePosition: (string, number) => void,
+  changeMute: boolean => void,
+  setPlayingUri: (string | null) => void,
   source: string,
   contentType: string,
   hasFileInfo: boolean,
+  onEndedCB: any,
 };
 
 function VideoViewer(props: Props) {
-  const { contentType, source } = props;
+  const { contentType, source, setPlayingUri, onEndedCB, changeVolume, changeMute, volume, muted } = props;
   const videoRef = useRef();
   const [requireRedraw, setRequireRedraw] = useState(false);
+
+  useEffect(() => {
+    const currentVideo: HTMLVideoElement | null = document.querySelector('video');
+
+    function doEnded() {
+      // clear position
+      setPlayingUri(null);
+      onEndedCB();
+    }
+    function doPause(e: Event) {
+      // store position e.target.currentTime
+    }
+    function doVolume(e: Event) {
+      // $FlowFixMe volume is missing in EventTarget
+      changeVolume(e.target.volume);
+      // $FlowFixMe muted is missing in EventTarget
+      changeMute(e.target.muted);
+    }
+
+    if (currentVideo) {
+      currentVideo.addEventListener('ended', doEnded);
+      currentVideo.addEventListener('pause', doPause);
+      currentVideo.addEventListener('volumechange', doVolume);
+    }
+    // cleanup function:
+    return () => {
+      if (currentVideo) {
+        currentVideo.removeEventListener('ended', doEnded);
+        currentVideo.removeEventListener('pause', doPause);
+        currentVideo.removeEventListener('volumechange', doVolume);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const videoNode = videoRef.current;
@@ -38,7 +80,11 @@ function VideoViewer(props: Props) {
 
     let player;
     if (!requireRedraw) {
-      player = videojs(videoNode, videoJsOptions);
+      player = videojs(videoNode, videoJsOptions, function() {
+        const player = this;
+        player.volume(volume);
+        player.muted(muted);
+      });
     }
 
     return () => {

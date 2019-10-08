@@ -34,10 +34,14 @@ $large-breakpoint: 1921px;
   --font-label: 0.9em;
   --font-subtext: 1em;
   --font-title: 1.6em;
+  --font-section-title: 2rem;
   --font-heading: 3rem;
 
   // Color
-  --color-background: #270f34;
+  --color-background: #f7f7f7;
+  --color-background--splash: #270f34;
+  --color-card-actions: #f7fbfe;
+  --color-card-actions--dark: #545454;
 
   // Dark Mode
   --dm-color-01: #ddd;
@@ -74,7 +78,8 @@ $large-breakpoint: 1921px;
   // Card
   --card-radius: 5px;
   --card-max-width: 1000px;
-  --card-box-shadow: 0px 2px 6px 0;
+  --card-box-shadow: 0px 2px 6px 0px;
+  --card-box-shadow--attached: 0px 4px 6px 0px;
 
   // Modal
   --modal-width: 440px;

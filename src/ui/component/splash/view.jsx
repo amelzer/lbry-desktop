@@ -148,10 +148,10 @@ export default class SplashScreen extends React.PureComponent<Props, State> {
         });
       }
     } else if (wallet && wallet.blocks_behind > 0) {
-      const format = wallet.blocks_behind === 1 ? '%s block behind' : '%s blocks behind';
+      const amountBehind = wallet.blocks_behind === 1 ? '%amountBehind% block behind' : '%amountBehind% blocks behind';
       this.setState({
         message: __('Blockchain Sync'),
-        details: `${__('Catching up...')} (${__(format, wallet.blocks_behind)})`,
+        details: `${__('Catching up...')} (${__(amountBehind, { amountBehind: wallet.blocks_behind })})`,
       });
     } else if (
       wallet &&
@@ -272,7 +272,7 @@ export default class SplashScreen extends React.PureComponent<Props, State> {
             <p className="card__subtitle">
               {__('Uh oh. The flux in our Retro Encabulator must be out of whack. Try refreshing to fix it.')}
             </p>
-            <div className="card__actions--top-space card__actions--center">
+            <div className="card__actions--center">
               <Button button="primary" label={__('Refresh')} onClick={() => window.location.reload()} />
             </div>
             <div className="help">

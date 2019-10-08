@@ -5,15 +5,17 @@ import React from 'react';
 import Button from 'component/button';
 import Tag from 'component/tag';
 import StickyBox from 'react-sticky-box/dist/esnext';
+import 'css-doodle';
 
 type Props = {
   subscriptions: Array<Subscription>,
   followedTags: Array<Tag>,
+  email: ?string,
+  obscureSideBar: boolean,
 };
 
 function SideBar(props: Props) {
-  const { subscriptions, followedTags } = props;
-
+  const { subscriptions, followedTags, obscureSideBar } = props;
   function buildLink(path, label, icon, guide) {
     return {
       navigate: path ? `$/${path}` : '/',
@@ -23,7 +25,18 @@ function SideBar(props: Props) {
     };
   }
 
-  return (
+  return obscureSideBar ? (
+    <StickyBox offsetTop={100} offsetBottom={20}>
+      <div className="card navigation--placeholder">
+        <div className="wrap">
+          <h2>LBRY</h2>
+
+          <p>{__('The best decentralized content platform on the web.')}</p>
+          <div className="card__actions">{/* <Button button="primary" label={__('Do Something')} /> */}</div>
+        </div>
+      </div>
+    </StickyBox>
+  ) : (
     <StickyBox offsetTop={100} offsetBottom={20}>
       <nav className="navigation">
         <ul className="navigation-links">
@@ -31,14 +44,16 @@ function SideBar(props: Props) {
             {
               ...buildLink(null, __('Home'), ICONS.HOME),
             },
+            // @if TARGET='app'
             {
               ...buildLink(PAGES.LIBRARY, __('Library'), ICONS.LIBRARY),
             },
+            // @endif
             {
-              ...buildLink(PAGES.PUBLISHED, __('Publishes'), ICONS.PUBLISH),
+              ...buildLink(PAGES.CHANNELS, __('Channels'), ICONS.CHANNEL),
             },
             {
-              ...buildLink(PAGES.FOLLOWING, __('Customize'), ICONS.EDIT),
+              ...buildLink(PAGES.PUBLISHED, __('Publishes'), ICONS.PUBLISH),
             },
           ].map(linkProps => (
             <li key={linkProps.label}>
@@ -46,25 +61,35 @@ function SideBar(props: Props) {
             </li>
           ))}
         </ul>
-        <ul className="navigation-links tags--vertical">
-          {followedTags.map(({ name }, key) => (
-            <li className="navigation-link__wrapper" key={name}>
-              <Tag navigate={`/$/tags?t${name}`} name={name} />
-            </li>
-          ))}
-        </ul>
-        <ul className="navigation-links--small">
-          {subscriptions.map(({ uri, channelName }, index) => (
-            <li key={uri} className="navigation-link__wrapper">
-              <Button
-                navigate={uri}
-                label={channelName}
-                className="navigation-link"
-                activeClass="navigation-link--active"
-              />
-            </li>
-          ))}
-        </ul>
+
+        <Button
+          navigate={`/$/${PAGES.FOLLOWING}`}
+          label={__('Customize')}
+          icon={ICONS.EDIT}
+          className="navigation-link"
+          activeClass="navigation-link--active"
+        />
+        <section className="navigation-links__inline">
+          <ul className="navigation-links--small tags--vertical">
+            {followedTags.map(({ name }, key) => (
+              <li className="navigation-link__wrapper" key={name}>
+                <Tag navigate={`/$/tags?t${name}`} name={name} />
+              </li>
+            ))}
+          </ul>
+          <ul className="navigation-links--small">
+            {subscriptions.map(({ uri, channelName }, index) => (
+              <li key={uri} className="navigation-link__wrapper">
+                <Button
+                  navigate={uri}
+                  label={channelName}
+                  className="navigation-link"
+                  activeClass="navigation-link--active"
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
       </nav>
     </StickyBox>
   );

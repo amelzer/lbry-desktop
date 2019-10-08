@@ -6,6 +6,7 @@ import {
   selectMyClaimForUri,
   selectIsResolvingPublishUris,
   selectTakeOverAmount,
+  selectFileInfosByOutpoint,
   doResetThumbnailStatus,
   doClearPublish,
   doUpdatePublishForm,
@@ -19,6 +20,7 @@ import PublishPage from './view';
 
 const select = state => ({
   ...selectPublishFormValues(state),
+  fileInfos: selectFileInfosByOutpoint(state),
   // The winning claim for a short lbry uri
   amountNeededForTakeover: selectTakeOverAmount(state),
   // My previously published claims under this short lbry uri

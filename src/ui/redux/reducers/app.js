@@ -1,7 +1,6 @@
 // @flow
 
 import * as ACTIONS from 'constants/action_types';
-import * as MODALS from 'constants/modal_types';
 import { remote } from 'electron';
 
 // @if TARGET='app'
@@ -38,6 +37,7 @@ export type AppState = {
   hasClickedComment: boolean,
   enhancedLayout: boolean,
   searchOptionsExpanded: boolean,
+  isPasswordSaved: boolean,
 };
 
 const defaultState: AppState = {
@@ -66,6 +66,7 @@ const defaultState: AppState = {
   searchOptionsExpanded: false,
   currentScroll: 0,
   scrollHistory: [0],
+  isPasswordSaved: false,
 };
 
 // @@router comes from react-router
@@ -94,6 +95,11 @@ reducers['@@router/LOCATION_CHANGE'] = (state, action) => {
 reducers[ACTIONS.DAEMON_READY] = state =>
   Object.assign({}, state, {
     daemonReady: true,
+  });
+
+reducers[ACTIONS.PASSWORD_SAVED] = (state, action) =>
+  Object.assign({}, state, {
+    isPasswordSaved: action.data,
   });
 
 reducers[ACTIONS.DAEMON_VERSION_MATCH] = state =>
@@ -242,14 +248,6 @@ reducers[ACTIONS.HIDE_MODAL] = state =>
   Object.assign({}, state, {
     modal: null,
     modalProps: null,
-  });
-
-// This is fired from the lbryinc module
-// Instead of adding callbacks in that module, we can just listen for this event
-// There will be no other modals at this time as this is a blocking action
-reducers[ACTIONS.AUTHENTICATION_FAILURE] = state =>
-  Object.assign({}, state, {
-    modal: MODALS.AUTHENTICATION_FAILURE,
   });
 
 reducers[ACTIONS.TOGGLE_SEARCH_EXPANDED] = state =>

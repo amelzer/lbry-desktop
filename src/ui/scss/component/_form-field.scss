@@ -13,14 +13,8 @@ form {
   .button--inverse {
     &:not(:hover),
     &:hover {
-      // @extend .button--inverse;
+      @extend .button--inverse;
     }
-  }
-}
-
-textarea {
-  &::placeholder {
-    opacity: 0.4;
   }
 }
 
@@ -46,27 +40,43 @@ textarea {
   height: var(--input-height);
   padding-bottom: 0.1em;
 
+  &::placeholder {
+    color: $lbry-gray-5;
+    opacity: 0.4;
+  }
+
   [data-mode='dark'] & {
     &::placeholder {
-      opacity: 0.4;
+      color: $lbry-white;
     }
   }
-}
-
-input,
-select,
-textarea {
-  border-color: lighten($lbry-black, 20%);
-  border-radius: var(--input-border-radius);
-  border-width: 1px;
 }
 
 fieldset-section {
   margin-bottom: var(--spacing-small);
 
+  input,
+  select,
+  textarea {
+    border-color: lighten($lbry-black, 20%);
+    border-radius: var(--input-border-radius);
+    background-color: $lbry-white;
+    border-width: 1px;
+
+    [data-mode='dark'] & {
+      background-color: var(--dm-color-03);
+      border-color: $lbry-black;
+    }
+  }
+
   label {
     width: auto;
     text-transform: none;
+    color: lighten($lbry-black, 20%);
+
+    [data-mode='dark'] & {
+      color: $lbry-gray-3;
+    }
   }
 }
 
@@ -85,8 +95,11 @@ fieldset-section:last-child {
 
 checkbox-element,
 radio-element {
+  &:hover {
+    cursor: pointer !important;
+  }
+
   label {
-    color: lighten($lbry-black, 20%);
     margin-bottom: 0;
     margin-left: var(--spacing-miniscule);
     font-size: var(--font-body);
@@ -102,6 +115,9 @@ radio-element {
 }
 
 checkbox-toggle {
+  border-width: 1px;
+  border-radius: var(--input-border-radius);
+
   &:before {
     background-position: center;
     background-repeat: no-repeat;
@@ -118,8 +134,9 @@ fieldset-group {
       width: auto;
       margin-bottom: 0;
 
-      &:first-of-type {
-        input {
+      &:first-child {
+        input,
+        select {
           border-right: none;
           border-top-right-radius: 0;
           border-bottom-right-radius: 0;
@@ -154,15 +171,10 @@ fieldset-group {
 
     label {
       min-height: 18px;
-    }
-
-    fieldset-section:first-child .form-field__prefix,
-    fieldset-section:last-child input {
-      border-color: $lbry-black;
-
-      [data-mode='dark'] {
-        border-color: $lbry-gray-4;
-      }
+      white-space: nowrap;
+      // Set width 0 and overflow visible so the label can act as if it's the input label and not a random text node in a side by side div
+      overflow: visible;
+      width: 0;
     }
 
     fieldset-section:first-child {
@@ -172,12 +184,16 @@ fieldset-group {
         height: var(--input-height);
         padding-right: 0;
         border: 1px solid;
+        border-top-left-radius: var(--input-border-radius);
+        border-bottom-left-radius: var(--input-border-radius);
         border-right: 0;
         border-color: $lbry-black;
         color: $lbry-gray-4;
+        background-color: $lbry-white;
 
         [data-mode='dark'] & {
-          border-color: $lbry-gray-4;
+          background-color: var(--dm-color-03);
+          border-color: var(--dm-color-02);
         }
       }
     }
@@ -198,7 +214,7 @@ fieldset-group {
 
         [data-mode='dark'] & {
           &:focus {
-            border-image-source: linear-gradient(to right, $lbry-gray-4, $lbry-teal-5 5%);
+            border-image-source: linear-gradient(to right, var(--dm-color-02), $lbry-teal-5 5%);
           }
         }
       }
@@ -263,11 +279,8 @@ fieldset-section {
     max-width: 12em;
     background-position: 95% center;
     background-size: 1.2rem;
-    background-color: $lbry-white;
 
     [data-mode='dark'] & {
-      background-color: transparent;
-
       option {
         background-color: $lbry-gray-5;
       }
@@ -281,10 +294,10 @@ fieldset-section {
       color: $lbry-white;
     }
 
-    input:not(:focus):not(.form-field--copyable),
-    textarea:not(:focus),
-    select:not(:focus) {
-      border-color: var(--dm-color-04);
+    input:not(.form-field--copyable),
+    textarea,
+    select {
+      border-color: $lbry-gray-5;
     }
   }
 }
@@ -293,7 +306,6 @@ fieldset-section {
   background-color: rgba($lbry-gray-1, 0.5);
   border: 1px solid $lbry-gray-1;
   color: $lbry-gray-5;
-  flex: 1;
   padding: 0.2rem 0.75rem;
   text-overflow: ellipsis;
   user-select: text;
@@ -312,10 +324,14 @@ fieldset-section {
   margin-bottom: var(--spacing-large);
 }
 
+.form-field--short {
+  width: 25em;
+}
+
 .form-field--price-amount {
   width: 7em;
 }
 
 .form-field--address {
-  width: 370px;
+  min-width: 18em;
 }

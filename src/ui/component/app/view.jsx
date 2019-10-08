@@ -1,18 +1,18 @@
 // @flow
+import * as ICONS from 'constants/icons';
 import React, { useEffect, useRef } from 'react';
 import analytics from 'analytics';
-import { Lbry, buildURI } from 'lbry-redux';
+import { buildURI, parseURI } from 'lbry-redux';
 import Router from 'component/router/index';
 import ModalRouter from 'modal/modalRouter';
 import ReactModal from 'react-modal';
-import SideBar from 'component/sideBar';
-import Header from 'component/header';
 import { openContextMenu } from 'util/context-menu';
 import useKonamiListener from 'util/enhanced-layout';
 import Yrbl from 'component/yrbl';
 import FileViewer from 'component/fileViewer';
 import { withRouter } from 'react-router';
-import usePrevious from 'util/use-previous';
+import usePrevious from 'effects/use-previous';
+import Button from 'component/button';
 
 export const MAIN_WRAPPER_CLASS = 'main-wrapper';
 
@@ -21,17 +21,37 @@ type Props = {
   pageTitle: ?string,
   language: string,
   theme: string,
-  accessToken: ?string,
   user: ?{ id: string, has_verified_email: boolean, is_reward_approved: boolean },
-  location: { pathname: string },
+  location: { pathname: string, hash: string },
   fetchRewards: () => void,
   fetchRewardedContent: () => void,
   fetchTransactions: () => void,
   fetchAccessToken: () => void,
+  fetchChannelListMine: () => void,
+  signIn: () => void,
+  requestDownloadUpgrade: () => void,
+  fetchChannelListMine: () => void,
+  onSignedIn: () => void,
+  isUpgradeAvailable: boolean,
+  autoUpdateDownloaded: boolean,
+  balance: ?number,
 };
 
 function App(props: Props) {
-  const { theme, fetchRewards, fetchRewardedContent, fetchTransactions, user, fetchAccessToken, accessToken } = props;
+  const {
+    theme,
+    fetchRewards,
+    fetchRewardedContent,
+    fetchTransactions,
+    user,
+    fetchAccessToken,
+    fetchChannelListMine,
+    signIn,
+    autoUpdateDownloaded,
+    isUpgradeAvailable,
+    requestDownloadUpgrade,
+    balance,
+  } = props;
   const appRef = useRef();
   const isEnhancedLayout = useKonamiListener();
   const userId = user && user.id;
@@ -40,16 +60,13 @@ function App(props: Props) {
   const previousUserId = usePrevious(userId);
   const previousHasVerifiedEmail = usePrevious(hasVerifiedEmail);
   const previousRewardApproved = usePrevious(isRewardApproved);
-  const { pathname } = props.location;
-  const urlParts = pathname.split('/');
-  const claimName = urlParts[1];
-  const claimId = urlParts[2];
+  const { pathname, hash } = props.location;
+  const showUpgradeButton = autoUpdateDownloaded || (process.platform === 'linux' && isUpgradeAvailable);
 
-  // @routingfixme
-  // claimName and claimId come from the url `{domain}/{claimName}/{claimId}"
   let uri;
   try {
-    uri = buildURI({ contentName: claimName, claimId: claimId });
+    const newpath = buildURI(parseURI(pathname.slice(1).replace(/:/g, '#')));
+    uri = newpath + hash;
   } catch (e) {}
 
   useEffect(() => {
@@ -60,8 +77,9 @@ function App(props: Props) {
     // @if TARGET='app'
     fetchRewards();
     fetchTransactions();
+    fetchChannelListMine(); // This needs to be done for web too...
     // @endif
-  }, [fetchRewards, fetchRewardedContent, fetchTransactions, fetchAccessToken]);
+  }, [fetchRewards, fetchRewardedContent, fetchTransactions, fetchAccessToken, fetchChannelListMine]);
 
   useEffect(() => {
     // $FlowFixMe
@@ -77,37 +95,48 @@ function App(props: Props) {
   useEffect(() => {
     // Check that previousHasVerifiedEmail was not undefined instead of just not truthy
     // This ensures we don't fire the emailVerified event on the initial user fetch
-    if (previousHasVerifiedEmail !== undefined && hasVerifiedEmail) {
+    if (previousHasVerifiedEmail === false && hasVerifiedEmail) {
       analytics.emailVerifiedEvent();
     }
-  }, [previousHasVerifiedEmail, hasVerifiedEmail]);
+  }, [previousHasVerifiedEmail, hasVerifiedEmail, signIn]);
 
   useEffect(() => {
-    if (previousRewardApproved !== undefined && isRewardApproved) {
+    if (previousRewardApproved === false && isRewardApproved) {
       analytics.rewardEligibleEvent();
     }
   }, [previousRewardApproved, isRewardApproved]);
 
-  // @if TARGET='web'
+  // Keep this at the end to ensure initial setup effects are run first
   useEffect(() => {
-    if (hasVerifiedEmail && accessToken) {
-      Lbry.setApiHeader('X-Lbry-Auth-Token', accessToken);
+    if (hasVerifiedEmail && balance !== undefined) {
+      signIn();
     }
-  }, [hasVerifiedEmail, accessToken]);
-  // @endif
+  }, [hasVerifiedEmail, signIn, balance]);
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className={MAIN_WRAPPER_CLASS} ref={appRef} onContextMenu={e => openContextMenu(e)}>
-      <Header />
-
-      <div className="main-wrapper__inner">
-        <Router />
-        <SideBar />
-      </div>
-
+      <Router />
       <ModalRouter />
       <FileViewer pageUri={uri} />
 
+      {/* @if TARGET='app' */}
+      {showUpgradeButton && (
+        <div className="snack-bar--upgrade">
+          {__('Upgrade is ready')}
+          <Button
+            className="snack-bar__action"
+            button="alt"
+            icon={ICONS.DOWNLOAD}
+            label={__('Install now')}
+            onClick={requestDownloadUpgrade}
+          />
+        </div>
+      )}
+      {/* @endif */}
       {isEnhancedLayout && <Yrbl className="yrbl--enhanced" />}
     </div>
   );

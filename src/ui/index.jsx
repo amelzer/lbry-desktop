@@ -8,12 +8,12 @@ import * as ACTIONS from 'constants/action_types';
 import { ipcRenderer, remote, shell } from 'electron';
 import moment from 'moment';
 import * as MODALS from 'constants/modal_types';
-import React, { useState, useEffect } from 'react';
+import React, { Fragment, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { doConditionalAuthNavigate, doDaemonReady, doAutoUpdate, doOpenModal, doHideModal } from 'redux/actions/app';
 import { Lbry, doToast, isURIValid, setSearchApi } from 'lbry-redux';
-import { doInitLanguage, doUpdateIsNightAsync } from 'redux/actions/settings';
+import { doUpdateIsNightAsync } from 'redux/actions/settings';
 import {
   doAuthenticate,
   Lbryio,
@@ -29,14 +29,17 @@ import { ConnectedRouter, push } from 'connected-react-router';
 import cookie from 'cookie';
 import { formatLbryUriForWeb } from 'util/uri';
 import { PersistGate } from 'redux-persist/integration/react';
+import analytics from 'analytics';
 
 // Import our app styles
 // If a style is not necessary for the initial page load, it should be removed from `all.scss`
 // and loaded dynamically in the component that consumes it
 import 'scss/all.scss';
 
+const startTime = Date.now();
+analytics.startupEvent();
+
 const APPPAGEURL = 'lbry://?';
-const COOKIE_EXPIRE_TIME = 60 * 60 * 24 * 365; // 1 year
 // @if TARGET='app'
 const { autoUpdater } = remote.require('electron-updater');
 autoUpdater.logger = remote.require('electron-log');
@@ -78,18 +81,19 @@ Lbryio.setOverride(
           throw new Error(__('auth_token is missing from response'));
         }
 
-        const newAuthToken = response.auth_token;
-        authToken = newAuthToken;
+        authToken = response.auth_token;
 
-        // @if TARGET='web'
+        let date = new Date();
+        date.setFullYear(date.getFullYear() + 1);
         document.cookie = cookie.serialize('auth_token', authToken, {
-          maxAge: COOKIE_EXPIRE_TIME,
+          expires: date,
         });
-        // @endif
+
         // @if TARGET='app'
         ipcRenderer.send('set-auth-token', authToken);
         // @endif
-        resolve();
+
+        resolve(authToken);
       });
     })
 );
@@ -228,17 +232,20 @@ function AppWrapper() {
     if (readyToLaunch) {
       app.store.dispatch(doUpdateIsNightAsync());
       app.store.dispatch(doDaemonReady());
-      app.store.dispatch(doInitLanguage());
       app.store.dispatch(doBlackListedOutpointsSubscribe());
       app.store.dispatch(doFilteredOutpointsSubscribe());
       window.sessionStorage.setItem('loaded', 'y');
+
+      const appReadyTime = Date.now();
+      const timeToStart = appReadyTime - startTime;
+      analytics.readyEvent(timeToStart);
     }
   }, [readyToLaunch, haveLaunched]);
 
   return (
     <Provider store={store}>
       <PersistGate persistor={persistor} loading={<div className="main--launching" />}>
-        <div>
+        <Fragment>
           {readyToLaunch ? (
             <ConnectedRouter history={history}>
               <ErrorBoundary>
@@ -252,7 +259,7 @@ function AppWrapper() {
               onReadyToLaunch={() => setReadyToLaunch(true)}
             />
           )}
-        </div>
+        </Fragment>
       </PersistGate>
     </Provider>
   );

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Modal } from 'modal/modal';
 import Button from 'component/button';
+import { deleteAuthToken } from 'util/saved-passwords';
 
 type Props = {
   closeModal: () => void,
@@ -23,6 +24,7 @@ class ModalWalletDecrypt extends React.PureComponent<Props, State> {
     const { props, state } = this;
 
     if (state.submitted && props.walletDecryptSucceded === true) {
+      deleteAuthToken();
       props.closeModal();
       props.updateWalletStatus();
     }
