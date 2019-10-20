@@ -11,6 +11,8 @@ type Props = {
   isPending: boolean,
   verifyUserIdentity: string => void,
   verifyPhone: () => void,
+  fetchUser: () => void,
+  skipLink?: string,
 };
 
 class UserVerify extends React.PureComponent<Props> {
@@ -25,7 +27,7 @@ class UserVerify extends React.PureComponent<Props> {
   }
 
   render() {
-    const { errorMessage, isPending, verifyPhone } = this.props;
+    const { errorMessage, isPending, verifyPhone, fetchUser, skipLink } = this.props;
     return (
       <React.Fragment>
         <section className="section__header">
@@ -34,7 +36,8 @@ class UserVerify extends React.PureComponent<Props> {
             {__(
               "We weren't able to auto-approve you for rewards. Please complete one of the steps below to unlock them."
             )}{' '}
-            <Button navigate="/" button="link" label={__('Skip')} />
+            <Button onClick={() => fetchUser()} button="link" label={__('Refresh')} /> {'or'}{' '}
+            <Button navigate={skipLink || '/'} button="link" label={__('Skip')} />.
           </p>
         </section>
 

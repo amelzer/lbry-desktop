@@ -125,7 +125,7 @@ const ClaimPreview = forwardRef<any, {}>((props: Props, ref: any) => {
   }
   // block channel claims if we can't control for them in claim search
   // e.g. fetchRecommendedSubscriptions
-  if (claim && isChannel && !shouldHide && !showUserBlocked && blockedChannelUris.length && isChannel) {
+  if (claim && isChannel && !shouldHide && !showUserBlocked && blockedChannelUris.length) {
     shouldHide = blockedChannelUris.some(blockedUri => blockedUri === claim.permanent_url);
   }
 
@@ -141,7 +141,7 @@ const ClaimPreview = forwardRef<any, {}>((props: Props, ref: any) => {
     if (onClick) {
       onClick(e);
     } else if ((isChannel || title) && !pending) {
-      history.push(formatLbryUriForWeb(uri));
+      history.push(formatLbryUriForWeb(claim && claim.canonical_url ? claim.canonical_url : uri));
     }
   }
 
@@ -190,7 +190,7 @@ const ClaimPreview = forwardRef<any, {}>((props: Props, ref: any) => {
           </div>
           {!pending && (
             <React.Fragment>
-              {!hideActions && actions !== undefined ? (
+              {hideActions ? null : actions !== undefined ? (
                 actions
               ) : (
                 <div className="card__actions--inline">

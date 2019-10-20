@@ -11,10 +11,10 @@ import { doOpenModal } from './app';
 export const doPublishDesktop = () => (dispatch: Dispatch, getState: () => {}) => {
   const publishSuccess = successResponse => {
     const state = getState();
-    analytics.apiLogPublish();
     const myClaims = selectMyClaims(state);
     const pendingClaim = successResponse.outputs[0];
-    const uri = pendingClaim.permanent_url;
+    analytics.apiLogPublish(pendingClaim);
+    const { permanent_url: url } = pendingClaim;
     const actions = [];
 
     actions.push({
@@ -29,7 +29,7 @@ export const doPublishDesktop = () => (dispatch: Dispatch, getState: () => {}) =
     const myNewClaims = isEdit
       ? myClaims.map(claim => (isMatch(claim) ? pendingClaim : claim))
       : myClaims.concat(pendingClaim);
-    actions.push(doOpenModal(MODALS.PUBLISH, { uri, isEdit }));
+    actions.push(doOpenModal(MODALS.PUBLISH, { uri: url, isEdit }));
     actions.push({
       type: ACTIONS.FETCH_CLAIM_LIST_MINE_COMPLETED,
       data: {

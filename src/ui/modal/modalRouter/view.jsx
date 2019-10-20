@@ -5,11 +5,9 @@ import ModalError from 'modal/modalError';
 import ModalDownloading from 'modal/modalDownloading';
 import ModalAutoGenerateThumbnail from 'modal/modalAutoGenerateThumbnail';
 import ModalAutoUpdateDownloaded from 'modal/modalAutoUpdateDownloaded';
-import ModalAutoUpdateConfirm from 'modal/modalAutoUpdateConfirm';
 import ModalUpgrade from 'modal/modalUpgrade';
 import ModalWelcome from 'modal/modalWelcome';
 import ModalFirstReward from 'modal/modalFirstReward';
-import ModalRewardApprovalRequired from 'modal/modalRewardApprovalRequired';
 import ModalRemoveFile from 'modal/modalRemoveFile';
 import ModalTransactionFailed from 'modal/modalTransactionFailed';
 import ModalFileTimeout from 'modal/modalFileTimeout';
@@ -56,8 +54,6 @@ function ModalRouter(props: Props) {
       return <ModalAutoGenerateThumbnail {...modalProps} />;
     case MODALS.AUTO_UPDATE_DOWNLOADED:
       return <ModalAutoUpdateDownloaded {...modalProps} />;
-    case MODALS.AUTO_UPDATE_CONFIRM:
-      return <ModalAutoUpdateConfirm {...modalProps} />;
     case MODALS.ERROR:
       return <ModalError {...modalProps} />;
     case MODALS.FILE_TIMEOUT:
@@ -68,8 +64,6 @@ function ModalRouter(props: Props) {
       return <ModalFirstReward {...modalProps} />;
     case MODALS.TRANSACTION_FAILED:
       return <ModalTransactionFailed {...modalProps} />;
-    case MODALS.REWARD_APPROVAL_REQUIRED:
-      return <ModalRewardApprovalRequired {...modalProps} />;
     case MODALS.CONFIRM_FILE_REMOVE:
       return <ModalRemoveFile {...modalProps} />;
     case MODALS.AFFIRM_PURCHASE:

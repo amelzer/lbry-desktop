@@ -11,6 +11,7 @@ import Button from 'component/button';
 import { formatLbryUriForWeb } from 'util/uri';
 import ChannelContent from 'component/channelContent';
 import ChannelAbout from 'component/channelAbout';
+import ChannelDiscussion from 'component/channelDiscussion';
 import ChannelThumbnail from 'component/channelThumbnail';
 import ChannelEdit from 'component/channelEdit';
 import ClaimUri from 'component/claimUri';
@@ -24,6 +25,7 @@ import HelpLink from 'component/common/help-link';
 
 const PAGE_VIEW_QUERY = `view`;
 const ABOUT_PAGE = `about`;
+const DISCUSSION_PAGE = `discussion`;
 const LIGHTHOUSE_URL = 'https://lighthouse.lbry.com/search';
 
 type Props = {
@@ -84,17 +86,20 @@ function ChannelPage(props: Props) {
   // If a user changes tabs, update the url so it stays on the same page if they refresh.
   // We don't want to use links here because we can't animate the tab change and using links
   // would alter the Tab label's role attribute, which should stay role="tab" to work with keyboards/screen readers.
-  const tabIndex = currentView === ABOUT_PAGE || editing ? 1 : 0;
+  const tabIndex = currentView === ABOUT_PAGE || editing ? 1 : currentView === DISCUSSION_PAGE ? 2 : 0;
+
   function onTabChange(newTabIndex) {
     let url = formatLbryUriForWeb(uri);
     let search = '?';
-    if (newTabIndex !== 0) {
-      search += `${PAGE_VIEW_QUERY}=${ABOUT_PAGE}`;
-    } else {
+
+    if (newTabIndex === 0) {
       setSearchResults(null);
       search += `page=${page}`;
+    } else if (newTabIndex === 1) {
+      search += `${PAGE_VIEW_QUERY}=${ABOUT_PAGE}`;
+    } else {
+      search += `${PAGE_VIEW_QUERY}=${DISCUSSION_PAGE}`;
     }
-
     history.push(`${url}${search}`);
   }
 
@@ -200,16 +205,22 @@ function ChannelPage(props: Props) {
           <TabList className="tabs__list--channel-page">
             <Tab disabled={editing}>{__('Content')}</Tab>
             <Tab>{editing ? __('Editing Your Channel') : __('About')}</Tab>
-            <Form onSubmit={handleSearch} className="wunderbar--channel">
-              <Icon icon={ICONS.SEARCH} />
-              <FormField
-                className="wunderbar__input"
-                value={searchQuery}
-                onChange={handleInputChange}
-                type="text"
-                placeholder={__('Search')}
-              />
-            </Form>
+            <Tab disabled={editing}>{__('Discussion')}</Tab>
+            {/* only render searchbar on content page (tab index 0 === content page) */}
+            {tabIndex === 0 ? (
+              <Form onSubmit={handleSearch} className="wunderbar--channel">
+                <Icon icon={ICONS.SEARCH} />
+                <FormField
+                  className="wunderbar__input"
+                  value={searchQuery}
+                  onChange={handleInputChange}
+                  type="text"
+                  placeholder={__('Search')}
+                />
+              </Form>
+            ) : (
+              <div />
+            )}
           </TabList>
 
           <TabPanels>
@@ -231,6 +242,9 @@ function ChannelPage(props: Props) {
               ) : (
                 <ChannelAbout uri={uri} />
               )}
+            </TabPanel>
+            <TabPanel>
+              <ChannelDiscussion uri={uri} />
             </TabPanel>
           </TabPanels>
         </Tabs>

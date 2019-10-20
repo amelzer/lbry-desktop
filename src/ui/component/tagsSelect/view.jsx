@@ -13,7 +13,7 @@ type Props = {
   followedTags: Array<Tag>,
   doToggleTagFollow?: string => void,
   suggestMature: boolean,
-  // Ovverides
+  // Overrides
   // The default component is for following tags
   title?: string | boolean,
   help?: string,
@@ -23,7 +23,7 @@ type Props = {
   placeholder?: string,
 };
 
-export default function TagSelect(props: Props) {
+export default function TagsSelect(props: Props) {
   const {
     showClose,
     followedTags,
@@ -58,10 +58,10 @@ export default function TagSelect(props: Props) {
   }
 
   React.useEffect(() => {
-    if (tagCount === 0) {
+    if (tagCount === 0 && showClose) {
       setHasClosed(false);
     }
-  }, [tagCount, setHasClosed]);
+  }, [tagCount, setHasClosed, showClose]);
 
   return (
     ((showClose && !hasClosed) || !showClose) && (

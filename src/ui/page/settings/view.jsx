@@ -11,6 +11,7 @@ import I18nMessage from 'component/i18nMessage';
 import Page from 'component/page';
 import SettingLanguage from 'component/settingLanguage';
 import FileSelector from 'component/common/file-selector';
+import SyncToggle from 'component/syncToggle';
 import Card from 'component/common/card';
 import { getSavedPassword } from 'util/saved-passwords';
 
@@ -52,7 +53,7 @@ type Props = {
   themes: Array<string>,
   automaticDarkModeEnabled: boolean,
   autoplay: boolean,
-  autoDownload: boolean,
+  // autoDownload: boolean,
   encryptWallet: () => void,
   decryptWallet: () => void,
   updateWalletStatus: () => void,
@@ -88,7 +89,6 @@ class SettingsPage extends React.PureComponent<Props, State> {
     (this: any).onInstantPurchaseMaxChange = this.onInstantPurchaseMaxChange.bind(this);
     (this: any).onThemeChange = this.onThemeChange.bind(this);
     (this: any).onAutomaticDarkModeChange = this.onAutomaticDarkModeChange.bind(this);
-    (this: any).clearCache = this.clearCache.bind(this);
     (this: any).onChangeTime = this.onChangeTime.bind(this);
     (this: any).onConfirmForgetPassword = this.onConfirmForgetPassword.bind(this);
   }
@@ -173,19 +173,6 @@ class SettingsPage extends React.PureComponent<Props, State> {
     this.props.setDaemonSetting(name, value);
   }
 
-  clearCache() {
-    this.setState({
-      clearingCache: true,
-    });
-    const success = () => {
-      this.setState({ clearingCache: false });
-      window.location.reload();
-    };
-    const clear = () => this.props.clearCache().then(success);
-
-    setTimeout(clear, 1000, { once: true });
-  }
-
   render() {
     const {
       daemonSettings,
@@ -198,7 +185,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
       autoplay,
       walletEncrypted,
       osNotificationsEnabled,
-      autoDownload,
+      // autoDownload,
       setDaemonSetting,
       setClientSetting,
       supportOption,
@@ -207,7 +194,9 @@ class SettingsPage extends React.PureComponent<Props, State> {
       floatingPlayer,
       clearPlayingUri,
       darkModeTimes,
+      clearCache,
     } = this.props;
+    const { storedPassword } = this.state;
 
     const noDaemonSettings = !daemonSettings || Object.keys(daemonSettings).length === 0;
 
@@ -227,6 +216,15 @@ class SettingsPage extends React.PureComponent<Props, State> {
         ) : (
           <div>
             <Card title={__('Language')} actions={<SettingLanguage />} />
+            <Card
+              title={__('Sync')}
+              subtitle={
+                walletEncrypted && !storedPassword
+                  ? __("To enable this feature, check 'Save Password' the next time you start the app.")
+                  : null
+              }
+              actions={<SyncToggle disabled={walletEncrypted && !storedPassword} />}
+            />
             {/* @if TARGET='app' */}
             <Card
               title={__('Download Directory')}
@@ -383,6 +381,15 @@ class SettingsPage extends React.PureComponent<Props, State> {
                     )}
                   />
 
+                  {/* <FormField
+                    type="checkbox"
+                    name="show_anonymous"
+                    onChange={() => setClientSetting(SETTINGS.SHOW_ANONYMOUS, !showAnonymous)}
+                    checked={showAnonymous}
+                    label={__('Show anonymous content')}
+                    helper={__('Anonymous content is published without a channel.')}
+                  /> */}
+
                   <FormField
                     type="checkbox"
                     name="show_nsfw"
@@ -404,7 +411,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
                   {__('You have')} {userBlockedChannelsCount} {__('blocked')}{' '}
                   {userBlockedChannelsCount === 1 && __('channel')}
                   {userBlockedChannelsCount !== 1 && __('channels')}.{' '}
-                  <Button button="link" label={__('Manage')} navigate={`/$/${PAGES.BLOCKED}`} />
+                  <Button button="link" label={__('Manage')} navigate={`/$/${PAGES.BLOCKED}`} />.
                 </p>
               }
             />
@@ -527,7 +534,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
                           }}
                         >
                           Wallet encryption is currently unavailable until it's supported for synced accounts. It will
-                          be added back soon. %learn_more%
+                          be added back soon. %learn_more%.
                         </I18nMessage>
                         {/* {__('Secure your local wallet data with a custom password.')}{' '}
                         <strong>{__('Lost passwords cannot be recovered.')} </strong>
@@ -588,6 +595,8 @@ class SettingsPage extends React.PureComponent<Props, State> {
                   />
 
                   {/* @if TARGET='app' */}
+                  {/*
+                  Disabling below until we get downloads to work with shared subscriptions code
                   <FormField
                     type="checkbox"
                     name="auto_download"
@@ -597,7 +606,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
                     helper={__(
                       "The latest file from each of your subscriptions will be downloaded for quick access as soon as it's published."
                     )}
-                  />
+                  /> */}
                   <fieldset-section>
                     <FormField
                       name="max_connections"
@@ -636,7 +645,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
                 <Button
                   button="inverse"
                   label={this.state.clearingCache ? __('Clearing') : __('Clear Cache')}
-                  onClick={this.clearCache}
+                  onClick={clearCache}
                   disabled={this.state.clearingCache}
                 />
               }

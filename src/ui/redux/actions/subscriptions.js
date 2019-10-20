@@ -1,16 +1,8 @@
 // @flow
-import { PAGE_SIZE } from 'constants/claim';
 import * as ACTIONS from 'constants/action_types';
-import * as SETTINGS from 'constants/settings';
-import * as NOTIFICATION_TYPES from 'constants/subscriptions';
 import { Lbryio, rewards, doClaimRewardType } from 'lbryinc';
-import { selectSubscriptions, selectUnreadByChannel } from 'redux/selectors/subscriptions';
-import { makeSelectClientSetting } from 'redux/selectors/settings';
-import { Lbry, parseURI, doResolveUris } from 'lbry-redux';
-import { doPlayUri } from 'redux/actions/content';
-
-const CHECK_SUBSCRIPTIONS_INTERVAL = 15 * 60 * 1000;
-const SUBSCRIPTION_DOWNLOAD_LIMIT = 1;
+import { selectUnreadByChannel } from 'redux/selectors/subscriptions';
+import { parseURI, doResolveUris } from 'lbry-redux';
 
 export const doSetViewMode = (viewMode: ViewMode) => (dispatch: Dispatch) =>
   dispatch({
@@ -21,7 +13,8 @@ export const doSetViewMode = (viewMode: ViewMode) => (dispatch: Dispatch) =>
 export const doFetchMySubscriptions = () => (dispatch: Dispatch, getState: GetState) => {
   const state: { subscriptions: SubscriptionState, settings: any } = getState();
   const { subscriptions: reduxSubscriptions } = state.subscriptions;
-  const { share_usage_data: isSharingData } = state.settings.daemonSettings;
+  const { share_usage_data: shareSetting } = state.settings.daemonSettings;
+  const isSharingData = shareSetting || IS_WEB;
 
   if (!isSharingData && isSharingData !== undefined) {
     // They aren't sharing their data, subscriptions will be handled by persisted redux state
@@ -72,7 +65,6 @@ export const doFetchMySubscriptions = () => (dispatch: Dispatch, getState: GetSt
       });
 
       dispatch(doResolveUris(subscriptions.map(({ uri }) => uri)));
-      dispatch(doCheckSubscriptions());
     })
     .catch(() => {
       dispatch({
@@ -189,115 +181,16 @@ export const doRemoveUnreadSubscription = (channelUri: string, readUri: string) 
   dispatch(doRemoveUnreadSubscriptions(channelUri, [readUri]));
 };
 
-export const doCheckSubscription = (subscriptionUri: string, shouldNotify?: boolean) => (
-  dispatch: Dispatch,
-  getState: GetState
-) => {
-  // no dispatching FETCH_CHANNEL_CLAIMS_STARTED; causes loading issues on <SubscriptionsPage>
-
-  const state = getState();
-  const shouldAutoDownload = makeSelectClientSetting(SETTINGS.AUTO_DOWNLOAD)(state);
-  const savedSubscription = state.subscriptions.subscriptions.find(sub => sub.uri === subscriptionUri);
-
-  if (!savedSubscription) {
-    throw Error(`Trying to find new content for ${subscriptionUri} but it doesn't exist in your subscriptions`);
-  }
-  dispatch({
-    type: ACTIONS.FETCH_CHANNEL_CLAIMS_STARTED,
-    data: {
-      uri: subscriptionUri,
-      page: 1,
-    },
-  });
-  // We may be duplicating calls here. Can this logic be baked into doFetchClaimsByChannel?
-  Lbry.claim_search({
-    channel: subscriptionUri,
-    valid_channel_signature: true,
-    order_by: ['release_time'],
-    page: 1,
-    page_size: PAGE_SIZE,
-  }).then(claimListByChannel => {
-    const { items: claimsInChannel } = claimListByChannel;
-
-    // may happen if subscribed to an abandoned channel or an empty channel
-    if (!claimsInChannel || !claimsInChannel.length) {
-      return;
-    }
-
-    dispatch({
-      type: ACTIONS.FETCH_CHANNEL_CLAIMS_COMPLETED,
-      data: {
-        uri: subscriptionUri,
-        claims: claimsInChannel || [],
-        page: 1,
-      },
-    });
-
-    // Determine if the latest subscription currently saved is actually the latest subscription
-    const latestIndex = claimsInChannel.findIndex(claim => claim.permanent_url === savedSubscription.latest);
-
-    // If latest is -1, it is a newly subscribed channel or there have been 10+ claims published since last viewed
-    const latestIndexToNotify = latestIndex === -1 ? 10 : latestIndex;
-
-    // If latest is 0, nothing has changed
-    // Do not download/notify about new content, it would download/notify 10 claims per channel
-    if (latestIndex !== 0 && savedSubscription.latest) {
-      let downloadCount = 0;
-
-      const newUnread = [];
-      claimsInChannel.slice(0, latestIndexToNotify).forEach(claim => {
-        const uri = claim.canonical_url;
-        const shouldDownload =
-          shouldAutoDownload && Boolean(downloadCount < SUBSCRIPTION_DOWNLOAD_LIMIT && !claim.value.fee);
-
-        // Add the new content to the list of "un-read" subscriptions
-        if (shouldNotify) {
-          newUnread.push(uri);
-        }
-
-        if (shouldDownload) {
-          downloadCount += 1;
-          // this fails since something is not resolved/saved somewhere...
-          dispatch(doPlayUri(uri, true, true));
-        }
-      });
-
-      dispatch(
-        doUpdateUnreadSubscriptions(
-          subscriptionUri,
-          newUnread,
-          downloadCount > 0 ? NOTIFICATION_TYPES.DOWNLOADING : NOTIFICATION_TYPES.NOTIFY_ONLY
-        )
-      );
-    }
-
-    // Set the latest piece of content for a channel
-    // This allows the app to know if there has been new content since it was last set
-    const latest = claimsInChannel[0];
-    dispatch(
-      setSubscriptionLatest(
-        {
-          channelName: latest.signing_channel.name,
-          uri: latest.signing_channel.permanent_url,
-        },
-        latest.permanent_url
-      )
-    );
-
-    // calling FETCH_CHANNEL_CLAIMS_COMPLETED after not calling STARTED
-    // means it will delete a non-existant fetchingChannelClaims[uri]
-  });
-};
-
 export const doChannelSubscribe = (subscription: Subscription) => (dispatch: Dispatch, getState: GetState) => {
   const {
     settings: { daemonSettings },
   } = getState();
-  const { share_usage_data: isSharingData } = daemonSettings;
+  const { share_usage_data: shareSetting } = daemonSettings;
+  const isSharingData = shareSetting || IS_WEB;
 
   const subscriptionUri = subscription.uri;
   if (!subscriptionUri.startsWith('lbry://')) {
-    throw Error(`Subscription uris must inclue the "lbry://" prefix.\nTried to subscribe to ${subscriptionUri}`);
+    throw Error(`Subscription uris must include the "lbry://" prefix.\nTried to subscribe to ${subscriptionUri}`);
   }
 
   dispatch({
@@ -306,7 +199,7 @@ export const doChannelSubscribe = (subscription: Subscription) => (dispatch: Dis
   });
 
   // if the user isn't sharing data, keep the subscriptions entirely in the app
-  if (isSharingData) {
+  if (isSharingData || IS_WEB) {
     const { channelClaimId } = parseURI(subscription.uri);
     // They are sharing data, we can store their subscriptions in our internal database
     Lbryio.call('subscription', 'new', {
@@ -316,15 +209,14 @@ export const doChannelSubscribe = (subscription: Subscription) => (dispatch: Dis
 
     dispatch(doClaimRewardType(rewards.TYPE_SUBSCRIPTION, { failSilently: true }));
   }
-
-  dispatch(doCheckSubscription(subscription.uri, true));
 };
 
 export const doChannelUnsubscribe = (subscription: Subscription) => (dispatch: Dispatch, getState: GetState) => {
   const {
     settings: { daemonSettings },
   } = getState();
-  const { share_usage_data: isSharingData } = daemonSettings;
+  const { share_usage_data: shareSetting } = daemonSettings;
+  const isSharingData = shareSetting || IS_WEB;
 
   dispatch({
     type: ACTIONS.CHANNEL_UNSUBSCRIBE,
@@ -337,27 +229,6 @@ export const doChannelUnsubscribe = (subscription: Subscription) => (dispatch: D
       claim_id: channelClaimId,
     });
   }
-};
-
-export const doCheckSubscriptions = () => (dispatch: Dispatch, getState: GetState) => {
-  const state = getState();
-  const subscriptions = selectSubscriptions(state);
-
-  subscriptions.forEach((sub: Subscription) => {
-    dispatch(doCheckSubscription(sub.uri, true));
-  });
-};
-
-export const doCheckSubscriptionsInit = () => (dispatch: Dispatch) => {
-  // doCheckSubscriptionsInit is called by doDaemonReady
-  // setTimeout below is a hack to ensure redux is hydrated when subscriptions are checked
-  // this will be replaced with <PersistGate> which reqiures a package upgrade
-  setTimeout(() => dispatch(doFetchMySubscriptions()), 5000);
-  const checkSubscriptionsTimer = setInterval(() => dispatch(doCheckSubscriptions()), CHECK_SUBSCRIPTIONS_INTERVAL);
-  dispatch({
-    type: ACTIONS.CHECK_SUBSCRIPTIONS_SUBSCRIBE,
-    data: { checkSubscriptionsTimer },
-  });
 };
 
 export const doFetchRecommendedSubscriptions = () => (dispatch: Dispatch) => {

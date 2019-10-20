@@ -7,7 +7,6 @@ import path from 'path';
 import * as ACTIONS from 'constants/action_types';
 import * as MODALS from 'constants/modal_types';
 import * as PAGES from 'constants/pages';
-import * as SETTINGS from 'constants/settings';
 import {
   Lbry,
   doBalanceSubscribe,
@@ -17,12 +16,12 @@ import {
   makeSelectClaimIsMine,
   doPopulateSharedUserState,
   doFetchChannelListMine,
-  selectBalance,
   doClearPublish,
+  doPreferenceGet,
+  doToast,
 } from 'lbry-redux';
 import Native from 'native';
 import { doFetchDaemonSettings } from 'redux/actions/settings';
-import { doCheckSubscriptionsInit } from 'redux/actions/subscriptions';
 import {
   selectIsUpgradeSkipped,
   selectUpdateUrl,
@@ -34,13 +33,11 @@ import {
   selectUpgradeTimer,
   selectModal,
 } from 'redux/selectors/app';
-import { Lbryio, doAuthenticate, doGetSync, selectSyncHash, doResetSync } from 'lbryinc';
+import { doAuthenticate, doGetSync, doResetSync } from 'lbryinc';
 import { lbrySettings as config, version as appVersion } from 'package.json';
 import { push } from 'connected-react-router';
 import analytics from 'analytics';
-import { deleteAuthToken, getSavedPassword } from 'util/saved-passwords';
-import cookie from 'cookie';
-import { makeSelectClientSetting } from 'redux/selectors/settings';
+import { deleteAuthToken, getSavedPassword, getAuthToken } from 'util/saved-passwords';
 
 // @if TARGET='app'
 const { autoUpdater } = remote.require('electron-updater');
@@ -133,21 +130,10 @@ export function doDownloadUpgradeRequested() {
   // This will probably be reorganized once we get auto-update going on Linux and remove
   // the old logic.
 
-  return (dispatch, getState) => {
-    const state = getState();
-
-    const autoUpdateDeclined = selectAutoUpdateDeclined(state);
-
+  return dispatch => {
     if (['win32', 'darwin'].includes(process.platform)) {
       // electron-updater behavior
-      if (autoUpdateDeclined) {
-        // The user declined an update before, so show the "confirm" dialog
-        dispatch(doOpenModal(MODALS.AUTO_UPDATE_CONFIRM));
-      } else {
-        // The user was never shown the original update dialog (e.g. because they were
-        // watching a video). So show the inital "update downloaded" dialog.
-        dispatch(doOpenModal(MODALS.AUTO_UPDATE_DOWNLOADED));
-      }
+      dispatch(doOpenModal(MODALS.AUTO_UPDATE_DOWNLOADED));
     } else {
       // Old behavior for Linux
       dispatch(doDownloadUpgrade());
@@ -342,7 +328,6 @@ export function doDaemonReady() {
       dispatch(doCheckUpgradeAvailable());
     }
     dispatch(doCheckUpgradeSubscribe());
-    dispatch(doCheckSubscriptionsInit());
     // @endif
   };
 }
@@ -450,37 +435,12 @@ export function doAnalyticsView(uri, timeToStart) {
 
 export function doSignIn() {
   return (dispatch, getState) => {
-    // The balance is subscribed to on launch for desktop
     // @if TARGET='web'
-    const { auth_token: authToken } = cookie.parse(document.cookie);
+    const authToken = getAuthToken();
     Lbry.setApiHeader('X-Lbry-Auth-Token', authToken);
     dispatch(doBalanceSubscribe());
     dispatch(doFetchChannelListMine());
-    dispatch(doCheckSubscriptionsInit());
     // @endif
-
-    // @if TARGET='app'
-    const state = getState();
-    const syncEnabled = makeSelectClientSetting(SETTINGS.ENABLE_SYNC)(state);
-    const hasSyncedBefore = selectSyncHash(state);
-    const balance = selectBalance(state);
-
-    // For existing users, check if they've synced before, or have 0 balance
-    if (syncEnabled && (hasSyncedBefore || balance === 0)) {
-      getSavedPassword().then(password => {
-        const passwordArgument = password === null ? '' : password;
-        dispatch(doGetSync(passwordArgument, !hasSyncedBefore));
-
-        setInterval(() => {
-          dispatch(doGetSync(passwordArgument));
-        }, 1000 * 60 * 5);
-      });
-    }
-    // @endif
-
-    Lbryio.call('user_settings', 'get').then(settings => {
-      dispatch(doPopulateSharedUserState(settings));
-    });
   };
 }
 
@@ -501,5 +461,36 @@ export function doSignOut() {
         });
       })
       .catch(() => location.reload());
+  };
+}
+
+export function doSyncWithPreferences() {
+  return dispatch => {
+    function handleSyncComplete() {
+      dispatch(doFetchChannelListMine());
+
+      function successCb(savedPreferences) {
+        if (savedPreferences !== null) {
+          dispatch(doPopulateSharedUserState(savedPreferences));
+        }
+      }
+
+      function failCb() {
+        dispatch(
+          doToast({
+            isError: true,
+            message: __('Unable to load your saved preferences.'),
+          })
+        );
+      }
+
+      doPreferenceGet('shared', successCb, failCb);
+    }
+
+    return getSavedPassword().then(password => {
+      const passwordArgument = password === null ? '' : password;
+
+      dispatch(doGetSync(passwordArgument, handleSyncComplete));
+    });
   };
 }

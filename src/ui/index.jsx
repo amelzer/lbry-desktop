@@ -26,10 +26,10 @@ import pjson from 'package.json';
 import app from './app';
 import doLogWarningConsoleMessage from './logWarningConsoleMessage';
 import { ConnectedRouter, push } from 'connected-react-router';
-import cookie from 'cookie';
 import { formatLbryUriForWeb } from 'util/uri';
 import { PersistGate } from 'redux-persist/integration/react';
 import analytics from 'analytics';
+import { getAuthToken, setAuthToken } from 'util/saved-passwords';
 
 // Import our app styles
 // If a style is not necessary for the initial page load, it should be removed from `all.scss`
@@ -54,13 +54,13 @@ if (process.env.SEARCH_API_URL) {
 }
 
 // @if TARGET='web'
-const SDK_API_URL = process.env.SDK_API_URL || 'https://api.lbry.tv/api/proxy';
+const SDK_API_URL = process.env.SDK_API_URL || 'https://api.lbry.tv/api/v1/proxy';
 Lbry.setDaemonConnectionString(SDK_API_URL);
 // @endif
 
 // We need to override Lbryio for getting/setting the authToken
-// We interect with ipcRenderer to get the auth key from a users keyring
-// We keep a local variable for authToken beacuse `ipcRenderer.send` does not
+// We interact with ipcRenderer to get the auth key from a users keyring
+// We keep a local variable for authToken because `ipcRenderer.send` does not
 // contain a response, so there is no way to know when it's been set
 let authToken;
 Lbryio.setOverride(
@@ -82,12 +82,7 @@ Lbryio.setOverride(
         }
 
         authToken = response.auth_token;
-
-        let date = new Date();
-        date.setFullYear(date.getFullYear() + 1);
-        document.cookie = cookie.serialize('auth_token', authToken, {
-          expires: date,
-        });
+        setAuthToken(authToken);
 
         // @if TARGET='app'
         ipcRenderer.send('set-auth-token', authToken);
@@ -114,7 +109,7 @@ Lbryio.setOverride(
         ipcRenderer.send('get-auth-token');
         // @endif
         // @if TARGET='web'
-        const { auth_token: authToken } = cookie.parse(document.cookie);
+        const authToken = getAuthToken();
         resolve(authToken);
         // @endif
       }
@@ -125,12 +120,8 @@ rewards.setCallback('claimFirstRewardSuccess', () => {
   app.store.dispatch(doOpenModal(MODALS.FIRST_REWARD));
 });
 
-rewards.setCallback('rewardApprovalRequired', () => {
-  app.store.dispatch(doOpenModal(MODALS.REWARD_APPROVAL_REQUIRED));
-});
-
 rewards.setCallback('claimRewardSuccess', () => {
-  app.store.dispatch(doHideModal(MODALS.REWARD_APPROVAL_REQUIRED));
+  app.store.dispatch(doHideModal());
 });
 
 // @if TARGET='app'

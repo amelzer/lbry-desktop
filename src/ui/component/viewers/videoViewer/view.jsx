@@ -5,7 +5,21 @@ import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import isUserTyping from 'util/detect-typing';
 
+const F11_KEYCODE = 122;
 const SPACE_BAR_KEYCODE = 32;
+const SMALL_F_KEYCODE = 70;
+const SMALL_M_KEYCODE = 77;
+const ARROW_LEFT_KEYCODE = 37;
+const ARROW_RIGHT_KEYCODE = 39;
+
+const FULLSCREEN_KEYCODE = SMALL_F_KEYCODE;
+const MUTE_KEYCODE = SMALL_M_KEYCODE;
+
+const SEEK_FORWARD_KEYCODE = ARROW_RIGHT_KEYCODE;
+const SEEK_BACKWARD_KEYCODE = ARROW_LEFT_KEYCODE;
+
+const SEEK_STEP = 10; // time to seek in seconds
+
 const VIDEO_JS_OPTIONS = {
   autoplay: true,
   controls: true,
@@ -32,6 +46,7 @@ function VideoViewer(props: Props) {
   const { contentType, source, setPlayingUri, onEndedCB, changeVolume, changeMute, volume, muted } = props;
   const videoRef = useRef();
   const [requireRedraw, setRequireRedraw] = useState(false);
+  let player = null;
 
   useEffect(() => {
     const currentVideo: HTMLVideoElement | null = document.querySelector('video');
@@ -78,12 +93,11 @@ function VideoViewer(props: Props) {
       ],
     };
 
-    let player;
     if (!requireRedraw) {
       player = videojs(videoNode, videoJsOptions, function() {
-        const player = this;
-        player.volume(volume);
-        player.muted(muted);
+        const self = this;
+        self.volume(volume);
+        self.muted(muted);
       });
     }
 
@@ -111,10 +125,38 @@ function VideoViewer(props: Props) {
     function handleKeyDown(e: KeyboardEvent) {
       const videoNode = videoRef.current;
 
-      if (videoNode && !isUserTyping() && e.keyCode === SPACE_BAR_KEYCODE) {
-        e.preventDefault();
+      if (!videoNode || isUserTyping()) {
+        return;
+      }
 
+      if (e.keyCode === SPACE_BAR_KEYCODE) {
         videoNode.paused ? videoNode.play() : videoNode.pause();
+      }
+
+      // Fullscreen toggle shortcuts
+      if (e.keyCode === FULLSCREEN_KEYCODE || e.keyCode === F11_KEYCODE) {
+        if (!player.isFullscreen()) {
+          player.requestFullscreen();
+        } else {
+          player.exitFullscreen();
+        }
+      }
+
+      // Mute/Unmute Shortcuts
+      if (e.keyCode === MUTE_KEYCODE) {
+        videoNode.muted = !videoNode.muted;
+      }
+
+      // Seeking Shortcuts
+      const duration = videoNode.duration;
+      const currentTime = videoNode.currentTime;
+      if (e.keyCode === SEEK_FORWARD_KEYCODE) {
+        const newDuration = currentTime + SEEK_STEP;
+        videoNode.currentTime = newDuration > duration ? duration : newDuration;
+      }
+      if (e.keyCode === SEEK_BACKWARD_KEYCODE) {
+        const newDuration = currentTime - SEEK_STEP;
+        videoNode.currentTime = newDuration < 0 ? 0 : newDuration;
       }
     }
 

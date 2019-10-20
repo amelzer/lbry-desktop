@@ -4,28 +4,96 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [0.36.1] - [Unrelased]
+## [0.37.1] - [2019-10-17]
+
+### Changed
+
+- Bumped lbry-sdk to `0.43.3` to fix an issue with encrypted wallets
 
 ### Fixed
 
+- Only show channel search bar on the content tab ([#3083](https://github.com/lbryio/lbry-desktop/pull/3083))
+
+## [0.37.0] - [2019-10-17]
+
+### Fixed
+
+- Escape the generated link for tags ([#2984](https://github.com/lbryio/lbry-desktop/pull/2984))
+- Toggle fullscreen when pressing `f` ([#2159](https://github.com/lbryio/lbry-desktop/issues/2159))
+- Can't exit full-screen from embedded content with key `F11` ([#2514](https://github.com/lbryio/lbry-desktop/issues/2514))
+- Markdown rendering issues with lbry urls and channel mentions ([#2928](https://github.com/lbryio/lbry-desktop/issues/2928))
+- Incorrect styles of tooltip on dark theme ([#3031](https://github.com/lbryio/lbry-desktop/issues/3031))
+- Code tag not formatting content on markdown preview ([#3027](https://github.com/lbryio/lbry-desktop/issues/3027))
+- Missing tooltip on channel mention ([#3036](https://github.com/lbryio/lbry-desktop/issues/3036))
+- Fix gap between video player and background [(#3025)](https://github.com/lbryio/lbry-desktop/issues/3025)
+- Don't allow price to change from scrollwheel [(#3042)](https://github.com/lbryio/lbry-desktop/issues/3042)
+
 ### Added
 
+- Syncing between other wallets is now supported for existing users ([#3058](https://github.com/lbryio/lbry-desktop/pull/3058))
+
+- Keyboard shortcuts for the following actions: ([#2999](https://github.com/lbryio/lbry-desktop/pull/2999))
+
+  - `→` to Seek Forward
+  - `←` to Seek Backward
+  - `f` to Going Fullscreen
+  - `m` to Mute/Unmute
+
+- Ability to add multiple tags at once with commas ([#2833](https://github.com/lbryio/lbry-desktop/pull/2833))
+- Disable GIF animation unless user hovers ([#2986](https://github.com/lbryio/lbry-desktop/pull/2986))
+- Add keyboard shortcuts to toggle player fullscreen: ([#3015](https://github.com/lbryio/lbry-desktop/pull/3015))
+
+  - `f` or `f11` to toggle player fullscreen mode
+
+- Markdown preview for comments: ([#2986](https://github.com/lbryio/lbry-desktop/pull/2986))
+  - Basic text formating (bold, italic, strike)
+  - Lbry urls preview and channel mentions
+  - Implement URL embedding in comments
+  - Code blocks, inline code and blockquotes
+  - Embed Images and gifs
+
 ### Changed
+
+- Refactor ModalAutoUpdateConfirm into ModalAutoUpdateDownloaded ([#2959](https://github.com/lbryio/lbry-desktop/pull/2959))
+
+## [0.36.1] - [2019-10-11]
+
+### Added
+
+- Notarized Mac OSX installer to support the Catalina upgrade ([#3014](https://github.com/lbryio/lbry-desktop/issues/3014))
+
+### Fixed
+
+- LBRY.tv share URL missing a slash, preventing opening on web ([#2995](https://github.com/lbryio/lbry-desktop/issues/2995))
 
 ## [0.36.0] - [2019-10-4]
 
 ### Added
 
-- Sync your balance and preferences between devices ([#2925](https://github.com/lbryio/lbry-desktop/pull/2925))
-- Youtube channel transfer ([#2925](https://github.com/lbryio/lbry-desktop/pull/2925))
+- Channels page above Publishes which lists all your channels ([#2925](https://github.com/lbryio/lbry-desktop/pull/2925))
+- Youtube channel claiming and tranfer ([#2925](https://github.com/lbryio/lbry-desktop/pull/2925)). See our [YouTube FAQ](https://lbry.com/faq/youtube) for more information.
+- New user sign in flow now includes automatic redeeming of 1 LBC and channel creation ([#2925](https://github.com/lbryio/lbry-desktop/pull/2925))
+- Ability to save wallet encryption password ([#2925](https://github.com/lbryio/lbry-desktop/pull/2925))
+- Sync your balance (only for users with new wallets) and preferences (subscriptions and tags) between devices ([#2925](https://github.com/lbryio/lbry-desktop/pull/2925)). See our [FAQ for more information](https://lbry.com/faq/account-sync)
 - Max character count on comments ([#2944](https://github.com/lbryio/lbry-desktop/pull/2944))
 - Subscription and file view counts ([#2920](https://github.com/lbryio/lbry-desktop/pull/2920))
 - Pagination on Library, Publishes, and Transactions page ([#2923](https://github.com/lbryio/lbry-desktop/pull/2923))
-- Granular balance information ([#2916](https://github.com/lbryio/lbry-desktop/pull/2916))
+- Volume setting is now saved between videos ([#2934](https://github.com/lbryio/lbry-desktop/pull/2934))
+- Granular balance information on wallet page - includes LBC locked in tips/claims/supports ([#2916](https://github.com/lbryio/lbry-desktop/pull/2916))
+- Acknowledgement of [terms of service](https://lbry.com/termsofservice) and age verification on sign in ([#2925](https://github.com/lbryio/lbry-desktop/pull/2925))
+- Hidden NSFW content message on tag search results page ([#3038](https://github.com/lbryio/lbry-desktop/pull/3038))
 
 ### Changed
 
-- Upgrade LBRY SDK to [0.42.0](https://github.com/lbryio/lbry-sdk/releases/tag/v0.42.0)
+- Upgrade LBRY SDK to [0.42.1](https://github.com/lbryio/lbry-sdk/releases/tag/v0.42.1) to improve overall connectivity
+- Sign out now clears the email address and refreshes the app ([#2925](https://github.com/lbryio/lbry-desktop/pull/2925))
+- Language strings are now pulled dynamically instead of requiring new app releases for better language support ([#2883](https://github.com/lbryio/lbry-desktop/pull/2883))
+- Minor design improvements to styles and cards
+
+### Fixed
+
+- Not being able to abandon claims not which weren't downloaded ([#2945](https://github.com/lbryio/lbry-desktop/pull/2945))
+- Duration not showing for audio ([#2936](https://github.com/lbryio/lbry-desktop/pull/2936))
 
 ## [0.35.7] - [2019-09-24]
 
