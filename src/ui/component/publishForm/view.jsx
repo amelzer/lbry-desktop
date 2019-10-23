@@ -1,11 +1,18 @@
 // @flow
+
+/*
+  On submit, this component calls publish, which dispatches doPublishDesktop.
+  doPublishDesktop calls lbry-redux Lbry publish method using lbry-redux publish state as params.
+  Publish simply instructs the SDK to find the file path on disk and publish it with the provided metadata.
+  On web, the Lbry publish method call is overridden in platform/web/api-setup, using a function in platform/web/publish.
+  File upload is carried out in the background by that function.
+ */
 import React, { useEffect, Fragment } from 'react';
 import { CHANNEL_NEW, CHANNEL_ANONYMOUS } from 'constants/claim';
 import { buildURI, isURIValid, isNameValid, THUMBNAIL_STATUSES } from 'lbry-redux';
 import Button from 'component/button';
 import ChannelSection from 'component/selectChannel';
 import classnames from 'classnames';
-import UnsupportedOnWeb from 'component/common/unsupported-on-web';
 import TagsSelect from 'component/tagsSelect';
 import PublishText from 'component/publishText';
 import PublishPrice from 'component/publishPrice';
@@ -123,9 +130,7 @@ function PublishForm(props: Props) {
 
   return (
     <Fragment>
-      <UnsupportedOnWeb />
-
-      <PublishFile disabled={formDisabled} />
+      <PublishFile disabled={publishing} />
       <div className={classnames({ 'card--disabled': formDisabled })}>
         <PublishText disabled={formDisabled} />
         <Card actions={<SelectThumbnail />} />

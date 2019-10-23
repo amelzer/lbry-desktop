@@ -1,5 +1,6 @@
 function generateStreamUrl(claimName, claimId) {
-  return `https://api.lbry.tv/content/claims/${claimName}/${claimId}/stream`;
+  const prefix = process.env.SDK_API_URL;
+  return `${prefix}/content/claims/${claimName}/${claimId}/stream`;
 }
 
-module.exports.generateStreamUrl = generateStreamUrl;
+module.exports = { generateStreamUrl };

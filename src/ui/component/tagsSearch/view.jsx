@@ -62,7 +62,8 @@ export default function TagsSearch(props: Props) {
 
     setNewTag('');
 
-    tags = tags.split(',').map(newTag => newTag.trim());
+    // Split into individual tags, normalize the tags, and remove duplicates with a set.
+    tags = [...new Set(tags.split(',').map(newTag => newTag.trim().toLowerCase()))];
     tags.forEach(tag => {
       if (onSelect) {
         onSelect({ name: tag });

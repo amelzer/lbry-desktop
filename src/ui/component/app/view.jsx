@@ -1,6 +1,7 @@
 // @flow
 import * as ICONS from 'constants/icons';
 import * as ACTIONS from 'constants/action_types';
+import * as PAGES from 'constants/pages';
 import React, { useEffect, useRef, useState } from 'react';
 import classnames from 'classnames';
 import analytics from 'analytics';
@@ -31,6 +32,7 @@ type Props = {
   theme: string,
   user: ?{ id: string, has_verified_email: boolean, is_reward_approved: boolean },
   location: { pathname: string, hash: string },
+  history: { push: string => void },
   fetchRewards: () => void,
   fetchRewardedContent: () => void,
   fetchTransactions: () => void,
@@ -45,8 +47,10 @@ type Props = {
   checkSync: () => void,
   setSyncEnabled: boolean => void,
   syncEnabled: boolean,
+  uploadCount: number,
   balance: ?number,
   accessToken: ?string,
+  syncError: ?string,
 };
 
 function App(props: Props) {
@@ -65,8 +69,11 @@ function App(props: Props) {
     setSyncEnabled,
     syncEnabled,
     checkSync,
+    uploadCount,
     balance,
     accessToken,
+    history,
+    syncError,
   } = props;
 
   const appRef = useRef();
@@ -121,7 +128,17 @@ function App(props: Props) {
       }
       setHasDeterminedIfNewUser(true);
     });
-  }, [balance, accessToken, hasDeterminedIfNewUser]);
+  }, [balance, accessToken, hasDeterminedIfNewUser, setHasDeterminedIfNewUser]);
+
+  useEffect(() => {
+    if (!uploadCount) return;
+    const handleBeforeUnload = event => {
+      event.preventDefault();
+      event.returnValue = 'magic';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [uploadCount]);
 
   useEffect(() => {
     ReactModal.setAppElement(appRef.current);
@@ -182,6 +199,12 @@ function App(props: Props) {
       };
     }
   }, [hasVerifiedEmail, syncEnabled, checkSync, hasDeterminedIfNewUser]);
+
+  useEffect(() => {
+    if (syncError) {
+      history.push(`/$/${PAGES.AUTH}?redirect=${pathname}`);
+    }
+  }, [syncError, pathname]);
 
   if (!user) {
     return null;

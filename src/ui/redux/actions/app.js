@@ -7,6 +7,7 @@ import path from 'path';
 import * as ACTIONS from 'constants/action_types';
 import * as MODALS from 'constants/modal_types';
 import * as PAGES from 'constants/pages';
+import { X_LBRY_AUTH_TOKEN } from 'constants/token';
 import {
   Lbry,
   doBalanceSubscribe,
@@ -33,7 +34,7 @@ import {
   selectUpgradeTimer,
   selectModal,
 } from 'redux/selectors/app';
-import { doAuthenticate, doGetSync, doResetSync } from 'lbryinc';
+import { doAuthenticate, doGetSync } from 'lbryinc';
 import { lbrySettings as config, version as appVersion } from 'package.json';
 import { push } from 'connected-react-router';
 import analytics from 'analytics';
@@ -437,7 +438,8 @@ export function doSignIn() {
   return (dispatch, getState) => {
     // @if TARGET='web'
     const authToken = getAuthToken();
-    Lbry.setApiHeader('X-Lbry-Auth-Token', authToken);
+    Lbry.setApiHeader(X_LBRY_AUTH_TOKEN, authToken);
+
     dispatch(doBalanceSubscribe());
     dispatch(doFetchChannelListMine());
     // @endif
@@ -450,9 +452,6 @@ export function doSignOut() {
       .then(() => {
         // @if TARGET='web'
         window.persistor.purge();
-        // @endif
-        // @if TARGET='app'
-        return dispatch(doResetSync());
         // @endif
       })
       .then(() => {

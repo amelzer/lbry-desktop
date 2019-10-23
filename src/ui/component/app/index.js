@@ -1,7 +1,15 @@
 import * as SETTINGS from 'constants/settings';
 import { hot } from 'react-hot-loader/root';
 import { connect } from 'react-redux';
-import { selectUser, doRewardList, doFetchRewardedContent, doFetchAccessToken, selectAccessToken } from 'lbryinc';
+import {
+  selectUser,
+  doRewardList,
+  doFetchRewardedContent,
+  doFetchAccessToken,
+  selectAccessToken,
+  selectGetSyncErrorMessage,
+  selectUploadCount,
+} from 'lbryinc';
 import { doFetchTransactions, doFetchChannelListMine, selectBalance } from 'lbry-redux';
 import { makeSelectClientSetting, selectThemePath } from 'redux/selectors/settings';
 import { selectIsUpgradeAvailable, selectAutoUpdateDownloaded } from 'redux/selectors/app';
@@ -17,7 +25,9 @@ const select = state => ({
   isUpgradeAvailable: selectIsUpgradeAvailable(state),
   balance: selectBalance(state),
   syncEnabled: makeSelectClientSetting(SETTINGS.ENABLE_SYNC)(state),
+  syncError: selectGetSyncErrorMessage(state),
   accessToken: selectAccessToken(state),
+  uploadCount: selectUploadCount(state),
 });
 
 const perform = dispatch => ({
